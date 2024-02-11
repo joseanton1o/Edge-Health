@@ -1,88 +1,55 @@
 package com.example.health_on_the_edge;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.Manifest;
+import android.app.Activity;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothSocket;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
-import android.widget.TextView;
+import android.view.View;
+import android.widget.Button;
+import android.widget.Toast;
 
-import com.android.volley.NetworkResponse;
-import com.android.volley.Request;
-import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.JsonObjectRequest;
-import com.android.volley.toolbox.Volley;
-import org.json.JSONObject;
+import java.io.IOException;
 
 public class MainActivity extends AppCompatActivity {
-    private Integer statusCode = null;
-    private RequestQueue queue = null;
-    private final String url = "http://10.42.0.2:5000/";
-
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-
-
+    protected void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
-        queue = Volley.newRequestQueue(this);
-
-        sendRequest();
-    }
-
-    /**
-     * Ejemplo de como enviar una petición GET al servidor que está montado en el propio ordenador
-     *
-     * Creditos: https://stackoverflow.com/questions/26015610/get-http-status-code-for-successful-requests-with-volley
-     *
-     *
-     */
-    private void sendRequest() {
-
-        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url, null,
-
-                new Response.Listener<JSONObject>() {
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        // Handle the successful JSON response here
-                        System.out.println("Response: " + response.toString());
-                        System.out.println("Status Code: " + statusCode);
-
-                        // Get the textView called apiResponse and set the response as its text
-                        TextView textView = (TextView) findViewById(R.id.apiResponse);
-                        try {
-                            textView.setText(response.getString("msg"));
-                        } catch (Exception e) {
-                            textView.setText(e.toString());
-                            System.out.println("Error: " + e);
-                        }
+        BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        ActivityResultLauncher<Intent> enableBluetoothLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == Activity.RESULT_OK) {
+                        // Bluetooth is enabled, proceed with Bluetooth operations
+                    } else {
+                        // Bluetooth enabling was cancelled or failed
                     }
-                }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                // Handle errors here
-                TextView textView = (TextView) findViewById(R.id.apiResponse);
+                });
 
-                textView.setText(error.toString());
+        BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        if (bluetoothAdapter == null) {
+            // Device doesn't support Bluetooth
+        } else {
+            if (!bluetoothAdapter.isEnabled()) {
+                Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+                enableBluetoothLauncher.launch(enableBtIntent);
+            } else {
+                // Bluetooth is enabled, proceed with Bluetooth operations
             }
-        }) {
-            @Override
-            protected Response<JSONObject> parseNetworkResponse(NetworkResponse response) {
-                // Get the status code from the response
-                statusCode = response.statusCode;
-                System.out.println("Status Code: " + statusCode);
+        }
 
-                // Here you can perform any action with the response headers and/or body
-
-                return super.parseNetworkResponse(response);
-            }
-        };
-        // What does this line do?
-        queue.add(jsonObjectRequest);
     }
-
 
 }
