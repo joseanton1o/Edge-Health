@@ -8,46 +8,28 @@
 
 package com.example.edge_health.presentation
 
+
 import android.Manifest
-import android.app.Activity
-import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothManager
-import android.bluetooth.BluetoothSocket
-import android.content.Intent
+import android.annotation.SuppressLint
 import android.content.pm.PackageManager
+import android.net.wifi.ScanResult
+import android.net.wifi.WifiConfiguration
+import android.net.wifi.WifiManager
 import android.os.Bundle
 import android.util.Log
-import android.widget.ArrayAdapter
 import android.widget.Button
+import android.widget.TextView
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Devices
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.app.ActivityCompat
-import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.material.Text
 import com.example.edge_health.R
-import com.example.edge_health.presentation.theme.Edge_healthTheme
-import java.util.UUID
+import org.json.JSONObject
+
 
 const val REQUEST_ENABLE_BT = 1
 
 class MainActivity : ComponentActivity() {
-    lateinit var mBtAdapter: BluetoothAdapter
-    var mAddressDevices: ArrayAdapter<String>? = null
-    var mNameDevices: ArrayAdapter<String>? = null
+
     var activityLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -55,79 +37,93 @@ class MainActivity : ComponentActivity() {
             Log.i("MainActivity", "ACTIVIDAD REGISTRADA")
         }
     }
-    companion object {
-        var m_myUUID: UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
-        private var m_bluetoothSocket: BluetoothSocket? = null
-
-        var m_isConnected: Boolean = false
-        lateinit var m_address: String
-    }
-    private val TAG = "jose-Legion-5"
+    var reqq = false
+    private val SSID = "jose-Legion-5"
+    private val TAG = "MainActivity"
+    @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main_layout)
         Log.d(TAG, "onCreate")
 
-        mAddressDevices = ArrayAdapter(this, android.R.layout.simple_list_item_1)
-        mNameDevices = ArrayAdapter(this, android.R.layout.simple_list_item_1)
+        // Scan WiFi
+        val wifiManager = applicationContext.getSystemService(WIFI_SERVICE) as WifiManager
 
-        val bluetoothBtn = findViewById<Button>(R.id.btButton)
-
-        // Configurar el adaptador Bluetooth
-        mBtAdapter = (getSystemService(BLUETOOTH_SERVICE) as BluetoothManager).adapter
-        // Aquí se tendrá también que buscar dispositivos tras el checkBT
-        bluetoothBtn.setOnClickListener {
-            //Encender Bluetooth
-            if (!mBtAdapter.isEnabled) {
-                Log.d(TAG, "Bluetooth apagado")
-                val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-                if (ActivityCompat.checkSelfPermission(
-                        this,
-                        Manifest.permission.BLUETOOTH_CONNECT
-                    ) != PackageManager.PERMISSION_GRANTED
-                ) {
-                    Log.i("MainActivity", "ActivityCompat#requestPermissions")
-                }
-                activityLauncher.launch(enableBtIntent)
-            } else {
-                Log.d(TAG, "Bluetooth encendido")
-            }
-
-            fun checkPairedDevices(): Boolean {
-                val pairedDevices = mBtAdapter.bondedDevices
-                if (pairedDevices.isEmpty()) {
-                    Log.d(TAG, "No hay dispositivos emparejados")
-                    return false
-                } else {
-                    for (device in pairedDevices) {
-                        Log.d(TAG, "Dispositivo: ${device.name}")
-                        if (device.name == "jose-Legion-5") {
-                            m_address = device.address
-                            Log.d(TAG, "Dispositivo encontrado")
-
-                            return true
-                        }
-                    }
-                    return false
-                }
-            }
-
-            if (checkPairedDevices()) {
-                Log.d(TAG, "Dispositivo encontrado con dirección: $m_address")
-                val device: BluetoothDevice = mBtAdapter.getRemoteDevice(m_address)
-                try {
-                    m_bluetoothSocket = device.createInsecureRfcommSocketToServiceRecord(m_myUUID)
-                    m_bluetoothSocket!!.connect()
-                    m_isConnected = true
-                    Log.d(TAG, "Conexión establecida")
-                } catch (e: Exception) {
-                    m_isConnected = false
-                    Log.d(TAG, "Error al conectar")
-                }
-
-            }
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 1)
+        }
+        else {
+            Log.d(TAG, "PERMISSION GRANTED")
         }
 
+        val myButton = findViewById<Button>(R.id.btButton)
+
+        myButton.setOnClickListener {
+            // TODO: Check whether the watch is connected to the node or not first
+            // Maybe just disconnect from the current network and connect to the node
+            // TODO: Encapsulate the connection to the node in either a method or a class
+            val info = wifiManager.connectionInfo
+            val ssid = info.ssid
+
+            if (ssid == SSID) {
+                Log.d(TAG, "Already connected to the node")
+                // Check whether the node is trusted or not and if not, disconnect and check for other node
+                // maybe add a counter to skip the node if it's not trusted, if counter is 0 then do not skip
+                // any node and try the first one if it is not trusted then start increasing the counter
+                return@setOnClickListener
+            }
+
+
+
+            val wifiScanList: List<ScanResult> = wifiManager.scanResults
+            var foundNode = false
+            for (result in wifiScanList) {// local counter inside the if statement to check if we have to skip the node, this for later
+                Log.d(TAG, result.SSID)
+                if (result.SSID == SSID) {
+                    Log.d(TAG, "FOUND NODE")
+                    foundNode = true
+                    break
+                }
+            }
+            if (!foundNode){
+                Log.d(TAG, "No node found")
+            }
+            else {
+                val networkPass = "12345678"
+                val conf = WifiConfiguration()
+                conf.SSID = "\"" + SSID + "\""
+                conf.preSharedKey = "\""+ networkPass +"\""
+                val netId = wifiManager.addNetwork(conf)
+                wifiManager.disconnect()
+                wifiManager.enableNetwork(netId, true)
+                wifiManager.reconnect()
+
+            }
+
+
+
+        }
+
+
+        val APIActioner = findViewById<Button>(R.id.API)
+        var resp = JSONObject()
+        APIActioner.setOnClickListener{
+
+            var req = VolleyRequest(this)
+            resp = req.sendRequest()
+
+
+            // check docker command is right: sudo docker run -p 5000:5000 c141ca158e50
+            reqq = true
+
+        }
+        if (reqq){
+            val textView = findViewById<TextView>(R.id.textView)
+
+            textView.setText(resp.getString("msg"))
+        }
     }
+
+
 
 }

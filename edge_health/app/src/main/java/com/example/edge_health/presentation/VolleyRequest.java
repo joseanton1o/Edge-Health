@@ -1,9 +1,5 @@
-package com.example.health_on_the_edge;
-
-import androidx.appcompat.app.AppCompatActivity;
-
-import android.os.Bundle;
-import android.util.Log;
+package com.example.edge_health.presentation;
+import android.content.Context;
 import android.widget.TextView;
 
 import com.android.volley.NetworkResponse;
@@ -15,22 +11,15 @@ import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 import org.json.JSONObject;
 
-public class MainActivity extends AppCompatActivity {
+public class VolleyRequest {
     private Integer statusCode = null;
     private RequestQueue queue = null;
     private final String url = "http://10.42.0.1:5000/";
 
+    private JSONObject resp = null;
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-
-
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
-        queue = Volley.newRequestQueue(this);
-
-        sendRequest();
+    public VolleyRequest(Context ctx){
+        queue = Volley.newRequestQueue(ctx);
     }
 
     /**
@@ -40,8 +29,8 @@ public class MainActivity extends AppCompatActivity {
      *
      *
      */
-    private void sendRequest() {
-
+    public JSONObject sendRequest() {
+        resp = new JSONObject();
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url, null,
 
                 new Response.Listener<JSONObject>() {
@@ -51,22 +40,13 @@ public class MainActivity extends AppCompatActivity {
                         System.out.println("Response: " + response.toString());
                         System.out.println("Status Code: " + statusCode);
 
-                        // Get the textView called apiResponse and set the response as its text
-                        TextView textView = (TextView) findViewById(R.id.apiResponse);
-                        try {
-                            textView.setText(response.getString("msg"));
-                        } catch (Exception e) {
-                            textView.setText(e.toString());
-                            System.out.println("Error: " + e);
-                        }
+                        resp = response;
                     }
                 }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
                 // Handle errors here
-                TextView textView = (TextView) findViewById(R.id.apiResponse);
-
-                textView.setText(error.toString());
+                throw new RuntimeException("Error: " + error);
             }
         }) {
             @Override
@@ -82,7 +62,6 @@ public class MainActivity extends AppCompatActivity {
         };
         // What does this line do?
         queue.add(jsonObjectRequest);
+        return resp;
     }
-
-
 }
