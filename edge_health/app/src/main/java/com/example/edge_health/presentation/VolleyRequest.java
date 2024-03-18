@@ -1,5 +1,8 @@
 package com.example.edge_health.presentation;
+import static com.android.volley.VolleyLog.TAG;
+
 import android.content.Context;
+import android.util.Log;
 import android.widget.TextView;
 
 import com.android.volley.NetworkResponse;
@@ -31,6 +34,7 @@ public class VolleyRequest {
      */
     public JSONObject sendRequest() {
         resp = new JSONObject();
+        Log.d(TAG, "Llega a la req");
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url, null,
 
                 new Response.Listener<JSONObject>() {

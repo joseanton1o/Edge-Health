@@ -115,9 +115,6 @@ class MainActivity : ComponentActivity() {
 
             // check docker command is right: sudo docker run -p 5000:5000 c141ca158e50
             reqq = true
-
-        }
-        if (reqq){
             val textView = findViewById<TextView>(R.id.textView)
 
             textView.setText(resp.getString("msg"))

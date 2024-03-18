@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.edge_health"
-        minSdk = 28
+        minSdk = 25
         targetSdk = 33
         versionCode = 1
         versionName = "1.0"
