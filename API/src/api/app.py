@@ -16,5 +16,17 @@ def index():
         )
         return response
 
+@app.route('/heart_rate', methods=['GET','POST']) # decorator that tells Flask what URL should trigger our function
+def hr():
+    if request.method == 'POST':
+        return {'msg':'You are using POST'}
+    else:
+        # JSON, set response status code to 200
+        response = app.response_class(
+            response='{"msg":"Welcome to the Flask API in heart_rate!"}',
+            status=203,
+            mimetype='application/json'
+        )
+        return response
 if __name__ == '__main__':
     app.run(host='0.0.0.0',debug=True) # run the application on the local development server
