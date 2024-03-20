@@ -1,0 +1,29 @@
+version: '3'
+
+services:
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - backend_api
+    networks:
+      - my_network
+
+  backend_api:
+    image: python:3.8
+    ports:
+      - "5000:5000"
+    command: >
+      sh -c "pip install -r /app/requirements.txt && python /app/app.py"
+    volumes:
+      - ./src/api/:/app
+      - ./requirements.txt:/app/requirements.txt
+    networks:
+      - my_network
+
+networks:
+  my_network:
+    driver: bridge
