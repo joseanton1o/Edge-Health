@@ -32,7 +32,7 @@ public class VolleyRequest {
      *
      *
      */
-    public JSONObject sendRequest() {
+    public JSONObject sendRequest(final VolleyCallback callback) {
         resp = new JSONObject();
         Log.d(TAG, "Llega a la req");
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url, null,
@@ -42,30 +42,23 @@ public class VolleyRequest {
                     public void onResponse(JSONObject response) {
                         // Handle the successful JSON response here
                         System.out.println("Response: " + response.toString());
-                        System.out.println("Status Code: " + statusCode);
 
                         resp = response;
+                        callback.onSuccess(response);
                     }
                 }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                // Handle errors here
-                throw new RuntimeException("Error: " + error);
-            }
-        }) {
-            @Override
-            protected Response<JSONObject> parseNetworkResponse(NetworkResponse response) {
-                // Get the status code from the response
-                statusCode = response.statusCode;
-                System.out.println("Status Code: " + statusCode);
+                @Override
+                public void onErrorResponse(VolleyError error) {
+                    callback.onError(error);
+                    // Handle errors here
+                    throw new RuntimeException("Error: " + error);
 
-                // Here you can perform any action with the response headers and/or body
-
-                return super.parseNetworkResponse(response);
-            }
-        };
+                }
+        });
+        Log.d("ERR","LLEGAAAAA");
         // What does this line do?
         queue.add(jsonObjectRequest);
+        Log.d("a",resp.toString());
         return resp;
     }
 }

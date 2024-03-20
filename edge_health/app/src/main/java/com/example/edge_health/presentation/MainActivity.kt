@@ -22,6 +22,7 @@ import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.ActivityCompat
+import com.android.volley.VolleyError
 import com.example.edge_health.R
 import org.json.JSONObject
 
@@ -107,17 +108,29 @@ class MainActivity : ComponentActivity() {
 
         val APIActioner = findViewById<Button>(R.id.API)
         var resp = JSONObject()
+        val callback = object : VolleyCallback {
+            override fun onSuccess(response: JSONObject) {
+                // Handle the JSON response here
+                Log.d("Respooooonse", response.toString())
+                resp = response;
+                print(resp)
+                val textView = findViewById<TextView>(R.id.textView)
+
+                textView.setText(resp.getString("msg"))
+            }
+
+            override fun onError(error: VolleyError) {
+                // Handle errors here
+                throw RuntimeException("Error: $error")
+            }
+        }
         APIActioner.setOnClickListener{
 
             var req = VolleyRequest(this)
-            resp = req.sendRequest()
+            resp = req.sendRequest(callback)
 
 
-            // check docker command is right: sudo docker run -p 5000:5000 c141ca158e50
-            reqq = true
-            val textView = findViewById<TextView>(R.id.textView)
 
-            textView.setText(resp.getString("msg"))
         }
     }
 
