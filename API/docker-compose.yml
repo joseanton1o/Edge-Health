@@ -8,14 +8,24 @@ services:
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf
     depends_on:
-      - backend_api
+      - heart_rate_service
+      - users_service
 
-  backend_api:
+  heart_rate_service:
     image: python:3.8
     ports:
       - "5000:5000"
     command: >
-      sh -c "pip install -r /app/requirements.txt && python /app/app.py"
+      sh -c "pip install -r /app/requirements.txt && python /app/heart_rate.py"
     volumes:
       - ./src/api/:/app
-      - ./requirements.txt:/app/requirements.txt
+
+  users_service:
+    image: python:3.8
+    ports:
+      - "5001:5001"
+    command: >
+      sh -c "pip install -r /app/requirements.txt && python /app/users.py"
+    volumes:
+      - ./src/api/:/app
+      
