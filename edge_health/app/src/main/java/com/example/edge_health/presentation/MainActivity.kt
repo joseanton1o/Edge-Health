@@ -22,6 +22,7 @@ import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.ActivityCompat
+import com.android.volley.Request
 import com.android.volley.VolleyError
 import com.example.edge_health.R
 import org.json.JSONObject
@@ -116,7 +117,7 @@ class MainActivity : ComponentActivity() {
                 print(resp)
                 val textView = findViewById<TextView>(R.id.textView)
 
-                textView.setText(resp.getString("msg"))
+                textView.setText(resp.getJSONArray("users").getJSONObject(0).getString("name"))
             }
 
             override fun onError(error: VolleyError) {
@@ -127,7 +128,7 @@ class MainActivity : ComponentActivity() {
         APIActioner.setOnClickListener{
 
             var req = VolleyRequest(this)
-            resp = req.sendRequest(callback)
+            resp = req.sendRequest(callback, "/api/users/all", Request.Method.GET, null)
 
 
 
