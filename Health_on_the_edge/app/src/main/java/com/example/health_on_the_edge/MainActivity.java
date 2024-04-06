@@ -18,7 +18,7 @@ import org.json.JSONObject;
 public class MainActivity extends AppCompatActivity {
     private Integer statusCode = null;
     private RequestQueue queue = null;
-    private final String url = "http://10.42.0.1:5000/";
+    private final String url = "http://10.42.0.1/";
 
 
     @Override
@@ -29,60 +29,32 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         queue = Volley.newRequestQueue(this);
+        VolleyRequest req = new VolleyRequest(this);
 
-        sendRequest();
-    }
 
-    /**
-     * Ejemplo de como enviar una petición GET al servidor que está montado en el propio ordenador
-     *
-     * Creditos: https://stackoverflow.com/questions/26015610/get-http-status-code-for-successful-requests-with-volley
-     *
-     *
-     */
-    private void sendRequest() {
-
-        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url, null,
-
-                new Response.Listener<JSONObject>() {
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        // Handle the successful JSON response here
-                        System.out.println("Response: " + response.toString());
-                        System.out.println("Status Code: " + statusCode);
-
-                        // Get the textView called apiResponse and set the response as its text
-                        TextView textView = (TextView) findViewById(R.id.apiResponse);
-                        try {
-                            textView.setText(response.getString("msg"));
-                        } catch (Exception e) {
-                            textView.setText(e.toString());
-                            System.out.println("Error: " + e);
-                        }
-                    }
-                }, new Response.ErrorListener() {
+        VolleyCallback callback = new VolleyCallback() {
             @Override
-            public void onErrorResponse(VolleyError error) {
-                // Handle errors here
-                TextView textView = (TextView) findViewById(R.id.apiResponse);
-
-                textView.setText(error.toString());
+            public void onSuccess(JSONObject response) {
+                Log.d("Response", response.toString());
+                // Get the TextView apiResponse from the activity_main.xml and set the response of email and password
+                TextView apiResponse = findViewById(R.id.apiResponse);
+                try{
+                    apiResponse.setText(response.getJSONArray("users").toString());
+                }catch (Exception e){
+                    Log.d("Error", e.toString());
+                }
             }
-        }) {
+
             @Override
-            protected Response<JSONObject> parseNetworkResponse(NetworkResponse response) {
-                // Get the status code from the response
-                statusCode = response.statusCode;
-                System.out.println("Status Code: " + statusCode);
-
-                // Here you can perform any action with the response headers and/or body
-
-                return super.parseNetworkResponse(response);
+            public void onError(VolleyError error) {
+                Log.d("Error", error.toString());
             }
         };
-        // What does this line do?
-        queue.add(jsonObjectRequest);
-    }
 
+        // get the connect button from the activity_main.xml and when it is clicked, send a request to the server
+        findViewById(R.id.connectButton).setOnClickListener(v -> {
+            req.sendRequest(callback, "/api/users/all", Request.Method.GET, null);
+        });
+    }
 
 }
