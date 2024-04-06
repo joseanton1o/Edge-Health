@@ -37,7 +37,6 @@ services:
 
   mongodb:
     image: mongo
-    container_name: mongodb_container
     ports:
       - "4000:27017"
     environment:
