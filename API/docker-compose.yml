@@ -19,6 +19,9 @@ services:
       sh -c "pip install -r /app/requirements.txt && python /app/heart_rate.py"
     volumes:
       - ./src/api/:/app
+      - .env:/app/.env
+    depends_on:
+      - mongodb
 
   users_service:
     image: python:3.8
@@ -28,4 +31,22 @@ services:
       sh -c "pip install -r /app/requirements.txt && python /app/users.py"
     volumes:
       - ./src/api/:/app
-      
+      - .env:/app/.env
+    depends_on:
+      - mongodb
+
+  mongodb:
+    image: mongo
+    container_name: mongodb_container
+    ports:
+      - "4000:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
+    command: mongod --bind_ip_all --auth
+    volumes:
+      - mongo_data:/data/db
+
+volumes:
+  mongo_data:
+    driver: local
