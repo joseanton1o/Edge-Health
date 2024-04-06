@@ -17,7 +17,7 @@ import org.json.JSONObject;
 public class VolleyRequest {
     private Integer statusCode = null;
     private RequestQueue queue = null;
-    private final String url = "http://10.42.0.1:5000/";
+    private final String url = "http://10.42.0.1:80";
 
     private JSONObject resp = null;
 
@@ -32,10 +32,10 @@ public class VolleyRequest {
      *
      *
      */
-    public JSONObject sendRequest(final VolleyCallback callback) {
+    public JSONObject sendRequest(final VolleyCallback callback, String endpoint, int method, JSONObject body) {
         resp = new JSONObject();
         Log.d(TAG, "Llega a la req");
-        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url, null,
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(method, url + endpoint , null,
 
                 new Response.Listener<JSONObject>() {
                     @Override
