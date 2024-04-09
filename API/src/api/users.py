@@ -15,7 +15,8 @@ print(dotenv_path)
 MONGO_USERNAME = os.getenv('MONGO_USERNAME')
 MONGO_PASSWORD = os.getenv('MONGO_PASSWORD')
 
-client = MongoClient('mongodb://' + MONGO_USERNAME + ':' + MONGO_PASSWORD + '@mongodb:27017/')
+client = MongoClient('mongodb://mongodb:27017/')
+
 db = client.users
 collection = db.users
 

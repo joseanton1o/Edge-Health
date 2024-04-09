@@ -39,10 +39,10 @@ services:
     image: mongo
     ports:
       - "4000:27017"
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USERNAME}
-      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
-    command: mongod --bind_ip_all --auth
+    # environment:
+    #   - MONGO_INITDB_ROOT_USERNAME=${MONGO_USERNAME}
+    #   - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
+    command: mongod --bind_ip_all --noauth
     volumes:
       - mongo_data:/data/db
 
