@@ -11,7 +11,10 @@ package com.example.edge_health.presentation
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.pm.PackageManager
+import android.hardware.Sensor
+import android.hardware.SensorManager
 import android.net.wifi.ScanResult
 import android.net.wifi.WifiConfiguration
 import android.net.wifi.WifiManager
@@ -31,7 +34,8 @@ import org.json.JSONObject
 const val REQUEST_ENABLE_BT = 1
 
 class MainActivity : ComponentActivity() {
-
+    private lateinit var sensorManager: SensorManager
+    private var mSensor: Sensor? = null
     var activityLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -42,6 +46,9 @@ class MainActivity : ComponentActivity() {
     var reqq = false
     private val SSID = "jose-Legion-5"
     private val TAG = "MainActivity"
+
+    // Sen
+
     @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,8 +65,11 @@ class MainActivity : ComponentActivity() {
             Log.d(TAG, "PERMISSION GRANTED")
         }
 
-        val myButton = findViewById<Button>(R.id.btButton)
+        sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        val sensorList: List<Sensor> = sensorManager.getSensorList(Sensor.TYPE_ALL)
 
+        val myButton = findViewById<Button>(R.id.btButton)
+        Log.d(TAG, "Centinela ==============================")
         myButton.setOnClickListener {
             // TODO: Check whether the watch is connected to the node or not first
             // Maybe just disconnect from the current network and connect to the node
@@ -87,6 +97,7 @@ class MainActivity : ComponentActivity() {
                     break
                 }
             }
+            Log.d(TAG, "Found node: $foundNode")
             if (!foundNode){
                 Log.d(TAG, "No node found")
             }
@@ -101,12 +112,33 @@ class MainActivity : ComponentActivity() {
                 wifiManager.reconnect()
 
             }
-
+            // Go to Sensors activity
+            val intent = android.content.Intent(this, SensorsActivity::class.java)
+            activityLauncher.launch(intent)
 
 
         }
 
+        for (sensor in sensorList) {
+            Log.d(TAG, sensor.name)
+        }
 
+
+        // Get the gyroscope sensor
+        /*
+        // puti in kotlin SensorEventListener sens = new
+        val sensorEventListener = object : SensorEventListener {
+            override fun onSensorChanged(event: android.hardware.SensorEvent) {
+                // Do something with this sensor data.
+                //Log.d(TAG, "Sensor data: ${event.values[0]}") )
+                Log.d(TAG, "Sensor data: ${event.values[0]}")
+            }
+
+            override fun onAccuracyChanged(p0: Sensor?, p1: Int) {
+                Log.d(TAG, "Accuracy changed")
+            }
+        }
+        */
         val APIActioner = findViewById<Button>(R.id.API)
         var resp = JSONObject()
         val callback = object : VolleyCallback {
@@ -127,12 +159,11 @@ class MainActivity : ComponentActivity() {
         }
         APIActioner.setOnClickListener{
 
-            var req = VolleyRequest(this)
+            val req = VolleyRequest(this)
             resp = req.sendRequest(callback, "/api/users/all", Request.Method.GET, null)
 
-
-
         }
+
     }
 
 
