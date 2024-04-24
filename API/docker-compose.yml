@@ -16,10 +16,11 @@ services:
     ports:
       - "5000:5000"
     command: >
-      sh -c "pip install -r /app/requirements.txt && python /app/heart_rate.py"
+      sh -c "export PYTHONPATH=/src:$PYTHONPATH && pip install -r /src/api/requirements.txt && python3 /src/api/heart_rate.py"
     volumes:
-      - ./src/api/:/app
-      - .env:/app/.env
+      - ./src/api/:/src/api/
+      - ./src/middleware/:/src/middleware
+      - ./src/models/:/src/models
     depends_on:
       - mongodb
 
@@ -28,10 +29,13 @@ services:
     ports:
       - "5001:5001"
     command: >
-      sh -c "pip install -r /app/requirements.txt && python /app/users.py"
+      sh -c "export PYTHONPATH=/src:$PYTHONPATH && pip install -r /src/api/requirements.txt && python3 /src/api/users.py"
     volumes:
-      - ./src/api/:/app
-      - .env:/app/.env
+      - ./src/api/:/src/api
+      - ./src/middleware/:/src/middleware
+      - ./src/models/:/src/models
+    env_file:
+      - .env
     depends_on:
       - mongodb
 

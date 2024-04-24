@@ -7,3 +7,5 @@ MarkupSafe==2.1.4
 Werkzeug==3.0.1
 pymongo==4.0.1
 python-dotenv==0.19.1
+flask-hashing==1.1
+pyjwt==2.3.0
