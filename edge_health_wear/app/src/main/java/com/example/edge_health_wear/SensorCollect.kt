@@ -1,0 +1,33 @@
+package com.example.edge_health_wear
+
+import androidx.room.ColumnInfo
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
+@Entity
+data class SensorCollect(
+
+    @ColumnInfo(name = "heart_rate") var heartRate: Double = 0.0,
+    @ColumnInfo(name = "gyroscope_x") var gyroscopeX: Double = 0.0,
+    @ColumnInfo(name = "gyroscope_y") var gyroscopeY: Double = 0.0,
+    @ColumnInfo(name = "gyroscope_z") var gyroscopeZ: Double = 0.0,
+    @ColumnInfo(name = "accelerometer_x") var accelerometerX: Double = 0.0,
+    @ColumnInfo(name = "accelerometer_y") var accelerometerY: Double = 0.0,
+    @ColumnInfo(name = "accelerometer_z") var accelerometerZ: Double = 0.0,
+    @ColumnInfo(name = "light") var light: Double = 0.0,
+    @ColumnInfo(name = "stepCounter") var stepCounter: Int = 0,
+    @PrimaryKey var timestamp: Long = System.currentTimeMillis() / 1000 // Unix epoch time in seconds
+){
+    override fun toString () : String {
+        return """
+            {
+                "heartRate": $heartRate,
+                "gyroscope": [$gyroscopeX, $gyroscopeY, $gyroscopeZ],
+                "accelerometer": [$accelerometerX, $accelerometerY, $accelerometerZ],
+                "light": $light,
+                "timestamp": $timestamp,
+                "stepCounter": $stepCounter
+            }
+        """.trimIndent() // No indentation, in JSON indentation is not necessary, -> save memory
+    }
+}
