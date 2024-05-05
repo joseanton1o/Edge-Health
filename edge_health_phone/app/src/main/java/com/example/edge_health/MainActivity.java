@@ -1,6 +1,7 @@
 package com.example.edge_health;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.room.Room;
 
 import android.content.Context;
 import android.os.Bundle;
@@ -30,21 +31,45 @@ public class MainActivity extends AppCompatActivity implements MessageClient.OnM
     ArrayList<String> testDataReceived = new ArrayList<>();
     private Context context = this;
     private String nodeId = null;
-    //////////////////////////////////////////
 
-    //Sensores reloj
+    private SensorDatabase db = null;
+    private SensorDao sensorDao = null;
 
-    ////////////////////////////////////////
-    Boolean watch_connected = false;
+
+    private SensorsCollect watchSensors = null;
+    private SensorsCollect prevWatchSensors = null;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        testSensorsDataJSON();
+
+        db = Room.databaseBuilder(this, SensorDatabase.class, "sensor-database-final").build();
+        sensorDao = db.sensorDao();
+
         queue = Volley.newRequestQueue(this);
         VolleyRequest req = new VolleyRequest(this);
+
+        // TODO: New user database where to store the authentication jwt token and the user data
+        // If there's no user data, then the user should be redirected to the register Activity
+        // Where a form will be displayed to the user to fill in the data
+        // If the user data is already stored but the token is either expired or not present,
+        // then the user should be redirected to the login Activity
+
+        Thread onCreateSync = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                SensorsCollect[] syncData = sensorDao.getFirst20NotSent();
+
+                while (syncData.length < 20){
+
+
+                    syncData = sensorDao.getFirst20NotSent();
+                }
+            }
+        });
 
         Wearable.getMessageClient(this).addListener(this);
 
@@ -81,10 +106,52 @@ public class MainActivity extends AppCompatActivity implements MessageClient.OnM
         if (messageEvent.getPath().equals("/sensores")) {
             try {
                 JSONObject respuesta = new JSONObject(new String(messageEvent.getData()));
-                watch_connected=true;
                 Log.d("Message", respuesta.toString());
+                watchSensors = new SensorsCollect(new String(messageEvent.getData()));
 
-                SensorsData.getInstance().addDataFromJson(respuesta);
+                // Insert the data into the database
+                SensorsCollect finalwatchSensors = watchSensors;
+                Thread t = new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        sensorDao.insert(finalwatchSensors);
+                    }
+                });
+
+
+                if (prevWatchSensors != null) {
+                    if (!watchSensors.equals(prevWatchSensors)) {
+                        t.start();
+                    }
+                } else {
+                    t.start();
+                }
+
+                TextView gx = findViewById(R.id.gX);
+                TextView gy = findViewById(R.id.gY);
+                TextView gz = findViewById(R.id.gZ);
+
+                gx.setText(String.format("%.2f", watchSensors.gyroscopeX));
+                gy.setText(String.format("%.2f", watchSensors.gyroscopeY));
+                gz.setText(String.format("%.2f", watchSensors.gyroscopeZ));
+
+                TextView ax = findViewById(R.id.aX);
+                TextView ay = findViewById(R.id.aY);
+                TextView az = findViewById(R.id.aZ);
+
+                ax.setText(String.format("%.2f", watchSensors.accelerometerX));
+                ay.setText(String.format("%.2f", watchSensors.accelerometerY));
+                az.setText(String.format("%.2f", watchSensors.accelerometerZ));
+
+                TextView hr = findViewById(R.id.heartRate);
+                hr.setText(String.format("%.2f", watchSensors.heartRate));
+
+
+                TextView light = findViewById(R.id.light);
+                light.setText(String.format("%.2f", watchSensors.light));
+
+                TextView steps = findViewById(R.id.stepCounter);
+                steps.setText(new Integer(watchSensors.steps).toString());
 
 
 
@@ -92,55 +159,6 @@ public class MainActivity extends AppCompatActivity implements MessageClient.OnM
                 e.printStackTrace();
             }
         }
-    }
-
-    private void testSensorsDataJSON() {
-        SensorsData sensorsData = SensorsData.getInstance();
-
-        try {
-
-            // Test ingesting data to the SensorsData object
-            ArrayList<Double> data = new ArrayList<>();
-            data.add(1.0);
-            data.add(1.0);
-            data.add(1.0);
-            Date nowDate = new Date();
-            Long now = nowDate.getTime() / 1000;
-            sensorsData.addGyroscopeData(data, now);
-            sensorsData.addGyroscopeData(data, now);
-
-            sensorsData.addAccelerometerData(data, now);
-            sensorsData.addAccelerometerData(data, now);
-
-            sensorsData.addLightData(2.0, nowDate);
-
-            sensorsData.addHeartRateData(2, nowDate);
-
-            sensorsData.addStepsData(0);
-
-            JSONObject retreivedData = sensorsData.getSensorsData();
-            Log.d("RetreivedData", retreivedData.toString());
-
-            JSONObject json = new JSONObject("{" +
-                    "\"Gyroscope\": {" + "\"x\": [1.0, 2.0, 3.0], \"y\": [1.0, 2.0, 3.0], \"z\": [1.0, 2.0, 3.0]" + "}," +
-                    "\"GyroscopeTimestamp\": [1, 2, 3]," +
-                    "\"Accelerometer\": {" + "\"x\": [1.0, 2.0, 3.0], \"y\": [1.0, 2.0, 3.0], \"z\": [1.0, 2.0, 3.0]" + "}," +
-                    "\"AccelerometerTimestamp\": [1, 2, 3]," +
-                    "\"Light\": [2.0, 2.0, 2.0]," +
-                    "\"LightTimestamp\": [1, 2, 3]," +
-                    "\"HeartRate\": [ 2, 2, 2]," +
-                    "\"HeartRateTimestamp\": [1, 2, 3]," +
-                    "\"Steps\": 0" +
-                    "}"
-            );
-
-
-            Log.d("JSON", json.toString());
-        }
-        catch (JSONException e) {
-            e.printStackTrace();
-        }
-
     }
 
 }

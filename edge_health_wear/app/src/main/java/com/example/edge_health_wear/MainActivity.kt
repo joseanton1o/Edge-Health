@@ -26,15 +26,23 @@ import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.ActivityCompat
+import androidx.room.Room
 import com.android.volley.VolleyError
 import com.example.edge_health.R
 import com.google.android.gms.tasks.Tasks
 import com.google.android.gms.wearable.CapabilityClient
 import com.google.android.gms.wearable.CapabilityInfo
 import com.google.android.gms.wearable.Wearable
+import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
+import java.util.Calendar
 import java.util.Date
+import java.util.LinkedList
+import java.util.Queue
+import java.util.Timer
+import java.util.TimerTask
 import java.util.concurrent.ExecutionException
+
 
 const val REQUEST_ENABLE_BT = 1
 
@@ -49,13 +57,16 @@ class MainActivity : ComponentActivity() {
             Log.i("MainActivity", "ACTIVIDAD REGISTRADA")
         }
     }
-
+    private lateinit var db: SensorDatabase
+    private lateinit var dao: SensorDao
     private val SSID = "jose-Legion-5"
     val TAG = "MainActivity"
     private var nodeId: String? = null
     private var sData: SensorsData = SensorsData.getInstance();
     private var wifiConnected: Boolean = false
     private lateinit var wifiManager: WifiManager
+    private var dataToSend: Queue<SensorCollect> = LinkedList<SensorCollect>()
+    private var currentData: SensorCollect = SensorCollect()
     // Create a new, generic sensor event listener, type of sensor will be retrieved from the event itself
     private val sensorEventListener = object : SensorEventListener {
         override fun onSensorChanged(event: android.hardware.SensorEvent) {
@@ -65,54 +76,27 @@ class MainActivity : ComponentActivity() {
 
                 Sensor.TYPE_HEART_RATE -> {
 
-                    val nowDate = Date()
-                    // Add the data to the sensors data object
-                    sData.addHeartRateData(event.values[0].toInt(), nowDate)
-
+                    currentData.heartRate = event.values[0].toDouble()
                 }
 
                 Sensor.TYPE_GYROSCOPE -> {
-                    // Empty arraylist
-                    val data = ArrayList<Double>()
-
-                    // Add the values to the arraylist
-                    for (i in 0..2) {
-                        data.add(event.values[i].toDouble())
-                    }
-
-                    // Get unix timestamp
-                    val timestamp = System.currentTimeMillis() / 1000L
-
-                    // Add the data to the sensors data object
-                    sData.addGyroscopeData(data, timestamp)
+                    currentData.gyroscopeX = event.values[0].toDouble()
+                    currentData.gyroscopeY = event.values[1].toDouble()
+                    currentData.gyroscopeZ = event.values[2].toDouble()
                 }
 
                 Sensor.TYPE_ACCELEROMETER -> {
-                    // Empty arraylist
-                    val data = ArrayList<Double>()
-
-                    // Add the values to the arraylist
-                    for (i in 0..2) {
-                        data.add(event.values[i].toDouble())
-                    }
-
-                    // Get unix timestamp
-                    val timestamp = System.currentTimeMillis() / 1000L
-
-                    // Add the data to the sensors data object
-                    sData.addAccelerometerData(data, timestamp)
+                    currentData.accelerometerX = event.values[0].toDouble()
+                    currentData.accelerometerY = event.values[1].toDouble()
+                    currentData.accelerometerZ = event.values[2].toDouble()
                 }
 
                 Sensor.TYPE_STEP_COUNTER -> {
-                    // Add the data to the sensors data object
-                    sData.addStepsData(event.values[0].toInt())
+                    currentData.stepCounter = event.values[0].toInt()
                 }
 
                 Sensor.TYPE_LIGHT -> {
-                    // Add the data to the sensors data object
-                    var nowDate = Date()
-
-                    sData.addLightData(event.values[0].toDouble(), nowDate)
+                    currentData.light = event.values[0].toDouble()
                 }
             }
         }
@@ -130,7 +114,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main_layout)
         Log.d(TAG, "onCreate")
-
+        db = Room.databaseBuilder(this, SensorDatabase::class.java, "sensor_database").build()
+        dao = db.sensorDao
         // ASK FOR ALL PERMISSIONS
 
         // Get a list of currently connected Bluetooth devices
@@ -156,6 +141,7 @@ class MainActivity : ComponentActivity() {
         connectToNode()
 
 
+
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
 
         // Register gyroscope sensor
@@ -173,9 +159,17 @@ class MainActivity : ComponentActivity() {
 
         val myButton = findViewById<Button>(R.id.btButton)
         myButton.setOnClickListener {
-            // Go to Sensors activity
-            val intent = android.content.Intent(this, SensorsActivity::class.java)
-            activityLauncher.launch(intent)
+            // Insert dummy data to the database and retrieve it
+            val sensor = SensorCollect(heartRate = 80.0, gyroscopeX = 0.0, gyroscopeY = 0.0, gyroscopeZ = 0.0, accelerometerX = 0.0, accelerometerY = 0.0, accelerometerZ = 0.0, light = 0.0, stepCounter = 0, timestamp = Calendar.getInstance().timeInMillis / 1000)
+            runBlocking {
+                dao.insertSensorData(sensor)
+                Log.d("Sensors", "Inserted sensor data")
+                val sensors = dao.getSensorsOrderedByTimestamp()
+
+                Log.d("Sensors", sensors.toString())
+            } // Insert the data to the database
+
+
         }
 
 
@@ -210,30 +204,37 @@ class MainActivity : ComponentActivity() {
         }
         Log.d("Thread", "Starting thread")
 
+        class enviar : TimerTask() {
+            override fun run() {
+                sendWearableMessage()
+            }
+        }
 
+        val timer = Timer()
+        timer.schedule(enviar(), 0, 500)
     }
 
     private fun connectToNode(){
-        Thread {
-            Log.d("Thread", "Thread running")
-            var capabilityInfo: CapabilityInfo? = null
-            try {
-                Log.d("Thread", "Awaiting capabilities")
-                capabilityInfo = Tasks.await<CapabilityInfo>(
-                    Wearable.getCapabilityClient(this).getCapability(
-                        "sensor_reception", CapabilityClient.FILTER_REACHABLE
+            Thread {
+                Log.d("Thread", "Thread running")
+                var capabilityInfo: CapabilityInfo? = null
+                try {
+                    Log.d("Thread", "Awaiting capabilities")
+                    capabilityInfo = Tasks.await<CapabilityInfo>(
+                        Wearable.getCapabilityClient(this).getCapability(
+                            "sensor_reception", CapabilityClient.FILTER_REACHABLE
+                        )
                     )
-                )
-            } catch (e: ExecutionException) {
-                e.printStackTrace()
-            } catch (e: InterruptedException) {
-                e.printStackTrace()
-            }
-            Log.d("Thread", "Capabilities received")
+                } catch (e: ExecutionException) {
+                    e.printStackTrace()
+                } catch (e: InterruptedException) {
+                    e.printStackTrace()
+                }
+                Log.d("Thread", "Capabilities received")
 
-            // capabilityInfo has the reachable nodes with the transcription capability
-            updateCapabilities(capabilityInfo!!)
-        }.start()
+                // capabilityInfo has the reachable nodes with the transcription capability
+                updateCapabilities(capabilityInfo!!)
+            }.start()
 
         if (nodeId == null) {
             // Try to connect to a nearby node with wifi
@@ -298,22 +299,33 @@ class MainActivity : ComponentActivity() {
         nodeId = bestNodeId
     }
 
-    private fun sendWearableMessage() {
+    private fun sendWearableMessage(): Boolean{
         // Send a message to the wearable
         // This is a simple message, but you can also send data
         // or other types of messages
         // The message will be received by the WearableListenerService
         // on the wearable device
         Log.d("Sending message", "Sending message to wearable ${nodeId}")
-        val data: JSONObject = this.sData.getSensorsData()
+        currentData.timestamp = Date().time / 1000
+        val data: JSONObject = JSONObject(this.currentData.toString())
         Log.d("Data", data.toString())
         Log.d("Sending message", "Sending message to wearable")
 
         if (nodeId != null) {
             Log.d("Sending message", "Sending message to wearable")
             Wearable.getMessageClient(this).sendMessage(nodeId!!, "/sensores", data.toString().toByteArray())
-
+            return true
         }
+        else{
+            // Save the data to the room database if the node is not connected
+            // This data will be sent to the node when it is connected
+            runBlocking {
+                dao.insertSensorData(currentData)
+            }
+        }
+        // TODO: Else try to connect to a computer node by wifi with API
+
+        return false
     }
 
     // Destroy the activity -- when the app is closed
