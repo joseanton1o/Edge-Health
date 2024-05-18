@@ -3,7 +3,6 @@ import jwt
 from flask import request, abort
 from flask import current_app
 from src.models.User import User
-from src.models.Device import Device
 import os
 from bson import ObjectId  # Import ObjectId from pymongo
 
@@ -35,7 +34,7 @@ def token_required(f):
                 "message": "Something went wrong",
                 "data": None,
                 "error": str(e)
-            }, 500
+            }, 401
 
         return f(current_user['username'], *args, **kwargs)
 
