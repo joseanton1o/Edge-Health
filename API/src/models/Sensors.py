@@ -53,31 +53,20 @@ class Sensors:
         self.step_counter = data["step_counter"]
         self.beats_per_min = data["beats_per_min"]
 
+    def to_json(self):
+        return {
+            "user_id": self.user_id,
+            "accelerometer_x": self.accelerometer_x,
+            "accelerometer_y": self.accelerometer_y,
+            "accelerometer_z": self.accelerometer_z,
+            "gyroscope_x": self.gyroscope_x,
+            "gyroscope_y": self.gyroscope_y,
+            "gyroscope_z": self.gyroscope_z,
+            "light": self.light,
+            "step_counter": self.step_counter,
+            "beats_per_min": self.beats_per_min
+        }
 
-    @classmethod
-    def get_sensors_by_user_id(cls, user_id):
-        """
-        Get all the sensors data for a specific user
-        Parameters:
-            :user_id: str, id of the document of the user
-        Returns:
-            :sensors: list, list of all the sensors data for the user
-        """
-        sensors = collection.find({"user_id":user_id})
-        sensors_list = []
-
-        for sensor in sensors:
-            sensor["_id"] = str(sensor["_id"])
-            sensor.pop("user_id")
-            sensors_list.append(sensor)
-
-        return sensors_list
-    
-    @classmethod
-    def create(cls, sensor_json):
-        new_sensor = collection.insert_one(sensor_json)
-        return new_sensor.inserted_id
-    
     @classmethod
     def check_sensor_json(cls, sensor_json):
         if "user_id" not in sensor_json:
@@ -123,23 +112,4 @@ class Sensors:
             "beats_per_min":110.0,
             "timestamp": "2021-06-01T13:00:00Z"
         }
-    
-    @classmethod
-    def _delete_all_sensors_by_user_id(cls, user_id):
-        """
-        Delete all the sensors data for a specific user
-        Parameters:
-            :user_id: str, id of the document of the user
-        Returns:
-            :sensors: list, list of all the sensors data for the user
-        """
-
-
-        sensors = collection.delete_many({"user_id":user_id})
-
-        while sensors.deleted_count > 0: # Keep deleting until there are no more sensors
-            sensors = collection.delete_many({"user_id":user_id})
-
-        return sensors.deleted_count
-    
-    
+ 

@@ -21,6 +21,7 @@ services:
       - ./src/apis/:/src/apis/
       - ./src/middleware/:/src/middleware
       - ./src/models/:/src/models
+      - ./src/DAOS/:/src/DAOS
     env_file:
       - .env
     depends_on:
@@ -36,6 +37,7 @@ services:
       - ./src/apis/:/src/apis
       - ./src/middleware/:/src/middleware
       - ./src/models/:/src/models
+      - ./src/DAOS/:/src/DAOS
     env_file:
       - .env
     depends_on:

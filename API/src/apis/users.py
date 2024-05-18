@@ -8,7 +8,7 @@ import logging
 from flask_hashing import Hashing
 from bson import ObjectId  # Import ObjectId from pymongo
 from src.middleware.auth_middleware import token_required
-
+from src.DAOS.UserDAO import UserDAO
 
 
 app = Flask(__name__) # create an instance of the Flask class referencing this file
@@ -30,10 +30,15 @@ MONGO_PASSWORD = os.getenv('MONGO_PASSWORD')
 HASH_SALT = os.getenv('HASH_SALT')
 JWT_SECRET = os.getenv('JWT_SECRET')
 
-client = MongoClient('mongodb://mongodb:27017/')
+users_dao = None
 
-db = client.users
-collection = db.users
+def set_up_db_connection():
+    global users_dao
+    client = MongoClient('mongodb://mongodb:27017/')
+    users_dao = UserDAO(client)
+
+
+set_up_db_connection()
 
 @app.route(ENDPOINT, methods=['GET','POST']) # decorator that tells Flask what URL should trigger our function
 def index():
@@ -52,37 +57,44 @@ def index():
 def create_user():
     print("Creating user")
 
+
+
     # Check if the user already exists
-    if User.get_by_username(request.json['username']):
+    if users_dao.get_by_username(request.json['username']):
         return {'msg':'User already exists'}, 400
+
+    if not request.json.get('admin'): # If the user has not specified if the user is an admin, set it to False
+        request.json['admin'] = False
+
     request.json['password'] = hashing.hash_value(request.json['password'], salt=HASH_SALT)
     print(request.json)
-    u_id = User.create(request.json)
+    u_id = users_dao.create(request.json)
     return {'msg':'User created', 'id':str(u_id)}, 201
 
 @app.route(ENDPOINT + '/<username>', methods=['DELETE'])
 def delete_user(username):
-    user = User.get_by_username(username)
+    user = users_dao.get_by_username(username)
     if not user:
         return {'msg':'User not found'}, 404
     
-    User.delete(username)
+    users_dao.delete(username)
     return {'msg':'User deleted'}, 200
 
 @app.route(ENDPOINT + '/all', methods=['GET'])
-@token_required
+@token_required(users_dao)
 def all_users(requester_username):
     logger.info(f'User {requester_username} requested all users')
     users = []
-    for user in collection.find():
+    for user in users_dao.collection.find({}):
         user.pop('_id')
         user.pop('password')
         users.append(user)
     return {'users':users}
 
+
 @app.route(ENDPOINT + '/login', methods=['POST'])
 def login():
-    user = User.get_by_username(request.json['username'])
+    user = users_dao.get_by_username(request.json['username'])
 
     if not user:
         return {'msg':'User not found'}, 404
