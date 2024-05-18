@@ -19,9 +19,6 @@ from bson import json_util, ObjectId
     "beats_per_min":110.0
 }
 """
-
-# TODO: Change this class to be a singleton DAO class, we won't store anything in the class
-
 class SensorsDAO:
     def __init__(self, dataBase_connection):
         self.client = dataBase_connection
