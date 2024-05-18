@@ -30,4 +30,36 @@ data class SensorCollect(
             }
         """.trimIndent() // No indentation, in JSON indentation is not necessary, -> save memory
     }
+    private fun floatEquals(a: Float, b: Float): Boolean {
+        // Compare two floats up to 3 decimal places
+        return Math.abs(a - b) < 0.001
+    }
+    fun equals(other: SensorCollect): Boolean {
+        // Compare up to 3 decimal places
+        return floatEquals(heartRate.toFloat(), other.heartRate.toFloat()) &&
+                floatEquals(gyroscopeX.toFloat(), other.gyroscopeX.toFloat()) &&
+                floatEquals(gyroscopeY.toFloat(), other.gyroscopeY.toFloat()) &&
+                floatEquals(gyroscopeZ.toFloat(), other.gyroscopeZ.toFloat()) &&
+                floatEquals(accelerometerX.toFloat(), other.accelerometerX.toFloat()) &&
+                floatEquals(accelerometerY.toFloat(), other.accelerometerY.toFloat()) &&
+                floatEquals(accelerometerZ.toFloat(), other.accelerometerZ.toFloat()) &&
+                floatEquals(light.toFloat(), other.light.toFloat()) &&
+                stepCounter == other.stepCounter
+    }
+
+    fun deepCopy(): SensorCollect {
+        return SensorCollect(
+            heartRate,
+            gyroscopeX,
+            gyroscopeY,
+            gyroscopeZ,
+            accelerometerX,
+            accelerometerY,
+            accelerometerZ,
+            light,
+            stepCounter,
+            timestamp
+        )
+    }
+
 }

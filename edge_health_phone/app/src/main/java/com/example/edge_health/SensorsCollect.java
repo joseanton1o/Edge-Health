@@ -4,6 +4,8 @@ import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
+import org.json.JSONObject;
+
 @Entity
 public class SensorsCollect {
     @PrimaryKey
@@ -61,6 +63,25 @@ public class SensorsCollect {
         }
     }
 
+    public JSONObject toJson(){
+        JSONObject json = new JSONObject();
+        try {
+            json.put("timestamp", this.timestamp);
+            json.put("beats_per_min", this.heartRate);
+            json.put("light", this.light);
+            json.put("accelerometer_x", this.accelerometerX);
+            json.put("accelerometer_y", this.accelerometerY);
+            json.put("accelerometer_z", this.accelerometerZ);
+            json.put("gyroscope_x", this.gyroscopeX);
+            json.put("gyroscope_y", this.gyroscopeY);
+            json.put("gyroscope_z", this.gyroscopeZ);
+            json.put("step_counter", this.steps);
+        } catch (org.json.JSONException e) {
+            e.printStackTrace();
+        }
+        return json;
+    }
+
     public void dataSent(){
         this.sent = true;
     }
@@ -71,6 +92,7 @@ public class SensorsCollect {
      * @param other
      * @return
      */
+
     public boolean equals(SensorsCollect other){
 
         if ((int) this.heartRate != (int) other.heartRate) return false;
@@ -81,9 +103,25 @@ public class SensorsCollect {
         if ((int) this.gyroscopeX != (int) other.gyroscopeX) return false;
         if ((int) this.gyroscopeY != (int) other.gyroscopeY) return false;
         if ((int) this.gyroscopeZ != (int) other.gyroscopeZ) return false;
-        if (this.steps != other.steps) return false;
         return true;
 
+    }
+
+    @Override
+    public String toString() {
+        return "SensorsCollect{" +
+                "timestamp=" + timestamp +
+                ", heartRate=" + heartRate +
+                ", light=" + light +
+                ", accelerometerX=" + accelerometerX +
+                ", accelerometerY=" + accelerometerY +
+                ", accelerometerZ=" + accelerometerZ +
+                ", gyroscopeX=" + gyroscopeX +
+                ", gyroscopeY=" + gyroscopeY +
+                ", gyroscopeZ=" + gyroscopeZ +
+                ", steps=" + steps +
+                ", sent=" + sent +
+                '}';
     }
 
 }
