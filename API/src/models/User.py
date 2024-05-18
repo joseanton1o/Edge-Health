@@ -36,38 +36,3 @@ class User:
             "password": self.password,
             "dob": self.dob
         }
-
-    @classmethod
-    def get_by_id(self, _id):
-        user = collection.find_one({"_id":_id})
-        return user
-    
-    @classmethod
-    def get_by_username(self, username):
-        user = collection.find_one({"username":username})
-        return user
-    
-    @classmethod
-    def create(self, user_json):
-        new_user = collection.insert_one(user_json)
-        return new_user.inserted_id
-
-    @classmethod
-    def update(self, username, updated_content):
-        user = collection.find_one({"username":username})
-        if user is None:
-            return None
-        collection.update_one({"username":username}, {"$set":updated_content})
-        return collection.find_one({"username":username})
-
-    @classmethod
-    def delete(self, username):
-        user = collection.find_one({"username":username})
-        if user is None:
-            return None
-        collection.delete_one({"username":username})
-        return collection.find_one({"username":username})
-
-    @classmethod
-    def from_json(cls, json):
-        return cls(**json)
