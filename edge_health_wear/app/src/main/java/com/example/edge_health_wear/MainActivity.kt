@@ -11,7 +11,7 @@ package com.example.edge_health_wear
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.hardware.Sensor
 import android.hardware.SensorEventListener
@@ -35,12 +35,9 @@ import com.google.android.gms.wearable.CapabilityInfo
 import com.google.android.gms.wearable.Wearable
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
-import java.util.Calendar
 import java.util.Date
 import java.util.LinkedList
 import java.util.Queue
-import java.util.Timer
-import java.util.TimerTask
 import java.util.concurrent.ExecutionException
 
 
@@ -57,6 +54,7 @@ class MainActivity : ComponentActivity() {
             Log.i("MainActivity", "ACTIVIDAD REGISTRADA")
         }
     }
+    private var prevSent: SensorCollect? = null
     private lateinit var db: SensorDatabase
     private lateinit var dao: SensorDao
     private val SSID = "jose-Legion-5"
@@ -67,6 +65,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var wifiManager: WifiManager
     private var dataToSend: Queue<SensorCollect> = LinkedList<SensorCollect>()
     private var currentData: SensorCollect = SensorCollect()
+
     // Create a new, generic sensor event listener, type of sensor will be retrieved from the event itself
     private val sensorEventListener = object : SensorEventListener {
         override fun onSensorChanged(event: android.hardware.SensorEvent) {
@@ -133,43 +132,24 @@ class MainActivity : ComponentActivity() {
         else {
             Log.d(TAG, "PERMISSION GRANTED3")
         }
-
-        // Scan WiFi
-        wifiManager = applicationContext.getSystemService(WIFI_SERVICE) as WifiManager
-
-        // Connect to the node
-        connectToNode()
-
-
-
-        sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
-
-        // Register gyroscope sensor
-        sensorManager.registerListener(sensorEventListener, sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE), SensorManager.SENSOR_DELAY_NORMAL)
-        // Register heart rate sensor
-        sensorManager.registerListener(sensorEventListener, sensorManager.getDefaultSensor(Sensor.TYPE_HEART_RATE), SensorManager.SENSOR_DELAY_NORMAL)
-        // Register accelerometer sensor
-        sensorManager.registerListener(sensorEventListener, sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_NORMAL)
-        // Register step counter sensor
-        sensorManager.registerListener(sensorEventListener, sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER), SensorManager.SENSOR_DELAY_NORMAL)
-        // Register light sensor
-        sensorManager.registerListener(sensorEventListener, sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT), SensorManager.SENSOR_DELAY_NORMAL)
-
+        if (ActivityCompat.checkSelfPermission(this,Manifest.permission.BODY_SENSORS) != PackageManager.PERMISSION_GRANTED) {
+            Log.d(TAG, "PERMISSION NOT GRANTED")
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.BODY_SENSORS), 1)
+        }
+        else {
+            Log.d(TAG, "PERMISSION GRANTED4")
+        }
+        if (ActivityCompat.checkSelfPermission(this,Manifest.permission.BODY_SENSORS_BACKGROUND) != PackageManager.PERMISSION_GRANTED) {
+            Log.d(TAG, "PERMISSION NOT GRANTED")
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.BODY_SENSORS_BACKGROUND), 1)
+        }
+        else {
+            Log.d(TAG, "PERMISSION GRANTED4")
+        }
 
 
         val myButton = findViewById<Button>(R.id.btButton)
         myButton.setOnClickListener {
-            // Insert dummy data to the database and retrieve it
-            val sensor = SensorCollect(heartRate = 80.0, gyroscopeX = 0.0, gyroscopeY = 0.0, gyroscopeZ = 0.0, accelerometerX = 0.0, accelerometerY = 0.0, accelerometerZ = 0.0, light = 0.0, stepCounter = 0, timestamp = Calendar.getInstance().timeInMillis / 1000)
-            runBlocking {
-                dao.insertSensorData(sensor)
-                Log.d("Sensors", "Inserted sensor data")
-                val sensors = dao.getSensorsOrderedByTimestamp()
-
-                Log.d("Sensors", sensors.toString())
-            } // Insert the data to the database
-
-
         }
 
 
@@ -200,18 +180,12 @@ class MainActivity : ComponentActivity() {
 
             // Thread to await the data from the wearable device
             // Send a simple message to the wearable
-            sendWearableMessage()
+            //sendWearableMessage()
         }
         Log.d("Thread", "Starting thread")
 
-        class enviar : TimerTask() {
-            override fun run() {
-                sendWearableMessage()
-            }
-        }
-
-        val timer = Timer()
-        timer.schedule(enviar(), 0, 500)
+        val intent = Intent(applicationContext, SensorsService::class.java)
+        startForegroundService(intent)
     }
 
     private fun connectToNode(){
@@ -305,7 +279,7 @@ class MainActivity : ComponentActivity() {
         // or other types of messages
         // The message will be received by the WearableListenerService
         // on the wearable device
-        Log.d("Sending message", "Sending message to wearable ${nodeId}")
+        Log.d("Sending message", "Sending message to node ${nodeId}")
         currentData.timestamp = Date().time / 1000
         val data: JSONObject = JSONObject(this.currentData.toString())
         Log.d("Data", data.toString())
@@ -330,6 +304,7 @@ class MainActivity : ComponentActivity() {
 
     // Destroy the activity -- when the app is closed
     override fun onDestroy() {
+
         super.onDestroy()
         Log.d(TAG, "onDestroy")
 
