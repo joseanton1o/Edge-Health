@@ -8,19 +8,21 @@ services:
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf
     depends_on:
-      - heart_rate_service
+      - sensors_service
       - users_service
 
-  heart_rate_service:
+  sensors_service:
     image: python:3.8
     ports:
       - "5000:5000"
     command: >
-      sh -c "export PYTHONPATH=/src:$PYTHONPATH && pip install -r /src/api/requirements.txt && python3 /src/api/heart_rate.py"
+      sh -c "export PYTHONPATH=/src:$PYTHONPATH && pip install -r /src/apis/requirements.txt && python3 /src/apis/sensors.py"
     volumes:
-      - ./src/api/:/src/api/
+      - ./src/apis/:/src/apis/
       - ./src/middleware/:/src/middleware
       - ./src/models/:/src/models
+    env_file:
+      - .env
     depends_on:
       - mongodb
 
@@ -29,9 +31,9 @@ services:
     ports:
       - "5001:5001"
     command: >
-      sh -c "export PYTHONPATH=/src:$PYTHONPATH && pip install -r /src/api/requirements.txt && python3 /src/api/users.py"
+      sh -c "export PYTHONPATH=/src:$PYTHONPATH && pip install -r /src/apis/requirements.txt && python3 /src/apis/users.py"
     volumes:
-      - ./src/api/:/src/api
+      - ./src/apis/:/src/apis
       - ./src/middleware/:/src/middleware
       - ./src/models/:/src/models
     env_file:

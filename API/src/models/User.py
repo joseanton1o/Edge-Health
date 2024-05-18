@@ -22,26 +22,19 @@ class User:
         "email": "John95@fake_email.com",
         "password": "Ahashedpassword"
         "dob": 30,
-        "risk_factors":["smoker", "sedentary"],
-        "devices":[123456789,33333333],
-        "disabled_devices":[2222222]
     """
-    def __init__(self, username, email, password, dob, devices, disabled_devices):
+    def __init__(self, username, email, password, dob):
         self.username = username
         self.email = email
         self.password = password
         self.dob = dob
-        self.devices = devices
-        self.disabled_devices = disabled_devices
 
     def json(self):
         return {
             "username": self.username,
             "email": self.email,
             "password": self.password,
-            "dob": self.dob,
-            "devices": self.devices,
-            "disabled_devices": self.disabled_devices
+            "dob": self.dob
         }
 
     @classmethod
@@ -65,6 +58,14 @@ class User:
         if user is None:
             return None
         collection.update_one({"username":username}, {"$set":updated_content})
+        return collection.find_one({"username":username})
+
+    @classmethod
+    def delete(self, username):
+        user = collection.find_one({"username":username})
+        if user is None:
+            return None
+        collection.delete_one({"username":username})
         return collection.find_one({"username":username})
 
     @classmethod

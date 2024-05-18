@@ -3,7 +3,6 @@ from flask import request
 from pymongo import MongoClient
 from dotenv import load_dotenv
 import os, jwt
-from src.models.Device import Device
 from src.models.User import User
 import logging
 from flask_hashing import Hashing
@@ -61,9 +60,19 @@ def create_user():
     u_id = User.create(request.json)
     return {'msg':'User created', 'id':str(u_id)}, 201
 
+@app.route(ENDPOINT + '/<username>', methods=['DELETE'])
+def delete_user(username):
+    user = User.get_by_username(username)
+    if not user:
+        return {'msg':'User not found'}, 404
+    
+    User.delete(username)
+    return {'msg':'User deleted'}, 200
+
 @app.route(ENDPOINT + '/all', methods=['GET'])
 @token_required
 def all_users(requester_username):
+    logger.info(f'User {requester_username} requested all users')
     users = []
     for user in collection.find():
         user.pop('_id')
@@ -85,10 +94,14 @@ def login():
     try:
         logger.info(f'User {user} logged in')
         logger.info(str(user['_id']))
-
-        user['token'] = jwt.encode({'user_id':str(user['_id'])}, JWT_SECRET, algorithm='HS256')
+        
+        if user['admin']:
+            user['token'] = jwt.encode({'user_id':str(user['_id']), 'admin':True }, JWT_SECRET , algorithm='HS256')
+        else:
+            user['token'] = jwt.encode({'user_id':str(user['_id'])}, JWT_SECRET, algorithm='HS256')
+        
         user.pop('_id')
-        return user
+        return user, 200
     except Exception as e:
         logger.error(f'Error generating token: {e}')
         return {'msg':'Could not generate token'}, 500
