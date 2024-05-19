@@ -228,6 +228,7 @@ public class MainActivity extends AppCompatActivity{
                     Log.d("Error", error.toString());
                 }
             };
+            Intent intent = new Intent(this, SensorsService.class); // val intent = Intent(applicationContext, SensorsService::class.java)
 
 
             VolleyRequest syncReq = new VolleyRequest(context);
@@ -237,6 +238,7 @@ public class MainActivity extends AppCompatActivity{
                     Log.d("SyncData", "Syncing data");
                     SensorsCollect[] syncData = sensorDao.getFirst20NotSent();
                     Log.d("SyncData", syncData.toString());
+                    stopService(intent); // stopService(intent
                     while (syncData.length > 0) {
                         for (SensorsCollect data : syncData) {
                             // Send the data to the server
@@ -246,23 +248,23 @@ public class MainActivity extends AppCompatActivity{
 
                             syncReq.sendRequest(callback, "/api/sensors/provision", Request.Method.POST, dataJson);
 
-                            //sensorDao.setSent(data.timestamp);
-
+                            sensorDao.setSent(data.timestamp);
                         }
                         syncData = sensorDao.getFirst20NotSent();
                     }
+                    startForegroundService(intent); // startService(intent)
+
                 }
             });
+
             //onCreateSync.start();
             // get the connect button from the activity_main.xml and when it is clicked, send a request to the server
             findViewById(R.id.connectButton).setOnClickListener(v -> {
-                                
                 onCreateSync.start();
                 //req.sendRequest(callback, "/api/users/all", Request.Method.GET, null);
             });
 
 
-            Intent intent = new Intent(this, SensorsService.class); // val intent = Intent(applicationContext, SensorsService::class.java)
             startForegroundService(intent); // startService(intent)
         }
     }
