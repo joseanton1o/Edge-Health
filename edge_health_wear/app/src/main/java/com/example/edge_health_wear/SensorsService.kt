@@ -46,6 +46,8 @@ class SensorsService : Service() {
     private lateinit var wifiManager: WifiManager
     private val SSID = "jose-Legion-5"
     val TAG = "SensorsService"
+    private var data_sent = 0
+
     private val sensorEventListener = object : SensorEventListener {
         override fun onSensorChanged(event: android.hardware.SensorEvent) {
             // Do something with this sensor data.
@@ -203,45 +205,6 @@ class SensorsService : Service() {
             updateCapabilities(capabilityInfo!!)
         }.start()
 
-        if (nodeId == null) {
-            // Try to connect to a nearby node with wifi
-            // TODO: Check whether the watch is connected to the node or not first
-            // Maybe just disconnect from the current network and connect to the node
-            // TODO: Encapsulate the connection to the node in either a method or a class
-            val info = wifiManager.connectionInfo
-            val ssid = info.ssid
-
-            if (ssid == SSID) {
-                Log.d(TAG, "Already connected to the node")
-                wifiConnected = true
-            }
-            else {
-                val wifiScanList: List<ScanResult> = wifiManager.scanResults
-                var foundNode = false
-                for (result in wifiScanList) {// local counter inside the if statement to check if we have to skip the node, this for later
-                    Log.d(TAG, result.SSID)
-                    if (result.SSID == SSID) {
-                        Log.d(TAG, "FOUND NODE")
-                        foundNode = true
-                        break
-                    }
-                }
-                Log.d(TAG, "Found node: $foundNode")
-                if (!foundNode) {
-                    Log.d(TAG, "No node found")
-                } else {
-                    val networkPass = "12345678"
-                    val conf = WifiConfiguration()
-                    conf.SSID = "\"" + SSID + "\""
-                    conf.preSharedKey = "\"" + networkPass + "\""
-                    val netId = wifiManager.addNetwork(conf)
-                    wifiManager.disconnect()
-                    wifiManager.enableNetwork(netId, true)
-                    wifiManager.reconnect()
-                    wifiConnected = true
-                }
-            }
-        }
     }
     private fun updateCapabilities(capabilityInfo: CapabilityInfo) {
         val connectedNodes = capabilityInfo.nodes
@@ -253,10 +216,7 @@ class SensorsService : Service() {
                 nodeId = node.id
                 Log.d("Nearby node", nodeId.toString())
             }
-            bestNodeId = node.id
-            Log.d("All node", nodeId.toString())
         }
-        nodeId = bestNodeId
     }
 
     private fun sendWearableMessage(): Boolean{
@@ -269,21 +229,35 @@ class SensorsService : Service() {
         currentData.timestamp = Date().time / 1000
         val data: JSONObject = JSONObject(this.currentData.toString())
         Log.d("Data", data.toString())
-        Log.d("Sending message", "Sending message to wearable")
+
+        if (prevSent != null) {
+            // The current data steps will be the difference between the current steps and the previous steps
+            currentData.stepCounter -= prevSent!!.stepCounter
+        }
+        else {
+            currentData.stepCounter = 0
+        }
 
         if (nodeId != null) {
-            Log.d("Sending message", "Sending message to wearable")
             Wearable.getMessageClient(this).sendMessage(nodeId!!, "/sensores", data.toString().toByteArray())
+
+            data_sent += 1
             return true
         }
         else{
             // Save the data to the room database if the node is not connected
             // This data will be sent to the node when it is connected
+            Log.d("Sending message", "Node not connected, saving data to database")
+
             runBlocking {
                 dao.insertSensorData(currentData)
             }
+            data_sent += 1
         }
-        // TODO: Else try to connect to a computer node by wifi with API
+        if (data_sent == 10) {
+            connectToNode()
+            data_sent = 0
+        }
 
         return false
     }
