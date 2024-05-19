@@ -237,29 +237,26 @@ public class MainActivity extends AppCompatActivity{
                     Log.d("SyncData", "Syncing data");
                     SensorsCollect[] syncData = sensorDao.getFirst20NotSent();
                     Log.d("SyncData", syncData.toString());
-                    // While (syncData.length > 0) {
+                    while (syncData.length > 0) {
+                        for (SensorsCollect data : syncData) {
+                            // Send the data to the server
+                            JSONObject dataJson = data.toJson();
+                            //
+                            Log.d("SyncData", dataJson.toString());
 
+                            syncReq.sendRequest(callback, "/api/sensors/provision", Request.Method.POST, dataJson);
 
-                    for (SensorsCollect data : syncData) {
-                        // Send the data to the server
-                        JSONObject dataJson = data.toJson();
-                        //
-                        Log.d("SyncData", dataJson.toString());
+                            //sensorDao.setSent(data.timestamp);
 
-                        syncReq.sendRequest(callback, "/api/sensors/provision", Request.Method.POST, dataJson);
-
-                        //sensorDao.setSent(data.timestamp);
-
+                        }
+                        syncData = sensorDao.getFirst20NotSent();
                     }
-                    syncData = sensorDao.getFirst20NotSent();
-                    //}
-
-
                 }
             });
             //onCreateSync.start();
             // get the connect button from the activity_main.xml and when it is clicked, send a request to the server
             findViewById(R.id.connectButton).setOnClickListener(v -> {
+                                
                 onCreateSync.start();
                 //req.sendRequest(callback, "/api/users/all", Request.Method.GET, null);
             });
