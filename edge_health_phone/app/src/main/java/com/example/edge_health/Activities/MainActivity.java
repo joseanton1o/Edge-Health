@@ -228,6 +228,7 @@ public class MainActivity extends AppCompatActivity{
                     Log.d("Error", error.toString());
                 }
             };
+            Intent intent = new Intent(this, SensorsService.class); // val intent = Intent(applicationContext, SensorsService::class.java)
 
 
             VolleyRequest syncReq = new VolleyRequest(context);
@@ -237,26 +238,25 @@ public class MainActivity extends AppCompatActivity{
                     Log.d("SyncData", "Syncing data");
                     SensorsCollect[] syncData = sensorDao.getFirst20NotSent();
                     Log.d("SyncData", syncData.toString());
-                    // While (syncData.length > 0) {
+                    stopService(intent); // stopService(intent
+                    while (syncData.length > 0) {
+                        for (SensorsCollect data : syncData) {
+                            // Send the data to the server
+                            JSONObject dataJson = data.toJson();
+                            //
+                            Log.d("SyncData", dataJson.toString());
 
+                            syncReq.sendRequest(callback, "/api/sensors/provision", Request.Method.POST, dataJson);
 
-                    for (SensorsCollect data : syncData) {
-                        // Send the data to the server
-                        JSONObject dataJson = data.toJson();
-                        //
-                        Log.d("SyncData", dataJson.toString());
-
-                        syncReq.sendRequest(callback, "/api/sensors/provision", Request.Method.POST, dataJson);
-
-                        //sensorDao.setSent(data.timestamp);
-
+                            sensorDao.setSent(data.timestamp);
+                        }
+                        syncData = sensorDao.getFirst20NotSent();
                     }
-                    syncData = sensorDao.getFirst20NotSent();
-                    //}
-
+                    startForegroundService(intent); // startService(intent)
 
                 }
             });
+
             //onCreateSync.start();
             // get the connect button from the activity_main.xml and when it is clicked, send a request to the server
             findViewById(R.id.connectButton).setOnClickListener(v -> {
@@ -265,7 +265,6 @@ public class MainActivity extends AppCompatActivity{
             });
 
 
-            Intent intent = new Intent(this, SensorsService.class); // val intent = Intent(applicationContext, SensorsService::class.java)
             startForegroundService(intent); // startService(intent)
         }
     }
