@@ -1,4 +1,4 @@
-version: '3'
+version: '3.8'
 
 services:
   nginx:
@@ -10,7 +10,8 @@ services:
     depends_on:
       - sensors_service
       - users_service
-
+    networks:
+      - internal_network
   sensors_service:
     image: python:3.8
     ports:
@@ -26,7 +27,8 @@ services:
       - .env
     depends_on:
       - mongodb
-
+    networks:
+      - internal_network
   users_service:
     image: python:3.8
     ports:
@@ -42,18 +44,27 @@ services:
       - .env
     depends_on:
       - mongodb
-
+    networks:
+      - internal_network
   mongodb:
     image: mongo
     ports:
       - "4000:27017"
-    # environment:
-    #   - MONGO_INITDB_ROOT_USERNAME=${MONGO_USERNAME}
-    #   - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
-    command: mongod --bind_ip_all --noauth
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+      - MONGO_USER=${MONGO_USER}
+      - MONGO_PASSWORD=${MONGO_PASSWORD}
+    command: mongod --bind_ip_all
     volumes:
-      - mongo_data:/data/db
+      - mongo_data_base:/data/db
+      - ./init-mongo:/docker-entrypoint-initdb.d
+    networks:
+      - internal_network
 
+networks:
+  internal_network:
+    driver: bridge
 volumes:
-  mongo_data:
+  mongo_data_base:
     driver: local

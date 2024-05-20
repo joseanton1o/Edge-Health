@@ -27,6 +27,7 @@ def create_user(username, email, password, dob, full_name, context):
     }
 
     response = requests.post("http://localhost/api/users/create", json=user)
+    print(response)
     context.response = response
 
 #######################################################

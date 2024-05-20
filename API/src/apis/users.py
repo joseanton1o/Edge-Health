@@ -25,8 +25,8 @@ ENDPOINT = '/api/users'
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
 load_dotenv(dotenv_path)
 print(dotenv_path)
-MONGO_USERNAME = os.getenv('MONGO_USERNAME')
-MONGO_PASSWORD = os.getenv('MONGO_PASSWORD')
+MONGO_USERNAME = os.getenv('MONGO_INITDB_ROOT_USERNAME')
+MONGO_PASSWORD = os.getenv('MONGO_INITDB_ROOT_PASSWORD')
 HASH_SALT = os.getenv('HASH_SALT')
 JWT_SECRET = os.getenv('JWT_SECRET')
 
@@ -34,7 +34,9 @@ users_dao = None
 
 def set_up_db_connection():
     global users_dao
-    client = MongoClient('mongodb://mongodb:27017/')
+    mongo_string = f'mongodb://{MONGO_USERNAME}:{MONGO_PASSWORD}@mongodb:27017/'
+    logger.info(mongo_string)
+    client = MongoClient(mongo_string)
     users_dao = UserDAO(client)
 
 
@@ -117,6 +119,10 @@ def login():
     except Exception as e:
         logger.error(f'Error generating token: {e}')
         return {'msg':'Could not generate token'}, 500
+
+@app.route(ENDPOINT + '/ping', methods=['GET'])
+def health():
+    return {'msg':'Healthy'}, 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0',debug=True, port=5001) # run the application on the local development server
