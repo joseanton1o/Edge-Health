@@ -25,17 +25,19 @@ logger = logging.getLogger(__name__)
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
 load_dotenv(dotenv_path)
 
-MONGO_USERNAME = os.getenv('MONGO_USERNAME')
-MONGO_PASSWORD = os.getenv('MONGO_PASSWORD')
+MONGO_USERNAME = os.getenv('MONGO_INITDB_ROOT_USERNAME')
+MONGO_PASSWORD = os.getenv('MONGO_INITDB_ROOT_PASSWORD')
 
 sensors_dao = None
 users_dao = None
 def set_up_db_connection():
     global sensors_dao
     global users_dao
-    client = MongoClient('mongodb://mongodb:27017/')
+    mongo_string = f'mongodb://{MONGO_USERNAME}:{MONGO_PASSWORD}@mongodb:27017/'
+    print(mongo_string)
+    client = MongoClient(mongo_string)
     sensors_dao = SensorsDAO(client)
-    users_dao = UserDAO(client)
+    users_dao = UserDAO(client) 
 
 set_up_db_connection()
 
@@ -108,6 +110,9 @@ def delete_all(requester_username):
     except Exception as e:
         return {'msg':str(e)}, 500
 
+@app.route(ENDPOINT + '/ping', methods=['GET'])
+def health():
+    return {'msg':'Healthy'}, 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0',debug=True) # run the application on the local development server

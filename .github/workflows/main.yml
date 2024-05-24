@@ -1,0 +1,55 @@
+name: CI
+
+on: [pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Create mongo folder for data
+      run: |
+        mkdir -p API/mongo_data
+
+    - name: Set up Docker Compose
+      run: |
+        echo "MONGO_INITDB_ROOT_USERNAME=${{ secrets.MONGO_INITDB_ROOT_USERNAME }}" > API/.env
+        echo "MONGO_INITDB_ROOT_PASSWORD=${{ secrets.MONGO_INITDB_ROOT_PASSWORD }}" >> API/.env
+        echo "HASH_SALT=${{ secrets.HASH_SALT }}" >> API/.env
+        echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> API/.env
+        echo "MONGO_USER=${{ secrets.MONGO_USER }}" >> API/.env
+        echo "MONGO_PASSWORD=${{ secrets.MONGO_PASSWORD }}" >> API/.env
+        docker-compose -f API/docker-compose.yml up -d --remove-orphans 
+
+    - name: Wait for services to be ready
+      run: |
+        sleep 5 && docker ps
+
+    - name: Ping nginx server
+      run: |
+        curl -X GET http://localhost:80/api/users/ping
+        curl -X GET http://localhost:80/api/sensors/ping
+        docker logs api_mongodb_1
+
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.12.3'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install behave && pip install requests
+
+    - name: Run tests
+      run: |
+        cd API/test/features
+        behave
+
+    - name: Shut down Docker Compose
+      run: |
+        docker-compose -f API/docker-compose.yml down
