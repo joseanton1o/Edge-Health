@@ -88,7 +88,7 @@ public class MainActivity extends AppCompatActivity{
             startActivity(loginIntent);
         }
         else {
-            db = Room.databaseBuilder(this, SensorDatabase.class, "sensor-database-final").build();
+            db = Room.databaseBuilder(this, SensorDatabase.class, "sensor-final-database").build();
             sensorDao = db.sensorDao();
 
 

@@ -29,6 +29,9 @@ public class SensorsCollect {
     @ColumnInfo(name = "steps")
     public int steps;
 
+    @ColumnInfo(name = "userStatus")
+    public String userStatus;
+
     @ColumnInfo(name = "sent")
     public boolean sent;
     public SensorsCollect(){
@@ -42,6 +45,7 @@ public class SensorsCollect {
         gyroscopeX = 0;
         gyroscopeY = 0;
         gyroscopeZ = 0;
+        userStatus = "none";
         sent = false;
     }
     public SensorsCollect(String jsonData) {
@@ -57,6 +61,7 @@ public class SensorsCollect {
             this.gyroscopeY = jsonObject.getJSONArray("gyroscope").getDouble(1);
             this.gyroscopeZ = jsonObject.getJSONArray("gyroscope").getDouble(2);
             this.steps = jsonObject.getInt("stepCounter");
+            this.userStatus = jsonObject.getString("userState");
             this.sent = false;
         } catch (org.json.JSONException e) {
             e.printStackTrace();
@@ -76,6 +81,7 @@ public class SensorsCollect {
             json.put("gyroscope_y", this.gyroscopeY);
             json.put("gyroscope_z", this.gyroscopeZ);
             json.put("step_counter", this.steps);
+            json.put("user_status", this.userStatus);
         } catch (org.json.JSONException e) {
             e.printStackTrace();
         }
@@ -120,6 +126,7 @@ public class SensorsCollect {
                 ", gyroscopeY=" + gyroscopeY +
                 ", gyroscopeZ=" + gyroscopeZ +
                 ", steps=" + steps +
+                ", userStatus='" + userStatus + '\'' +
                 ", sent=" + sent +
                 '}';
     }
