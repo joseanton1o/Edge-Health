@@ -66,6 +66,7 @@ class MainActivity : ComponentActivity() {
     private var dataToSend: Queue<SensorCollect> = LinkedList<SensorCollect>()
     private var currentData: SensorCollect = SensorCollect()
 
+    // CONST STRING ARRAY USERSTATES
     // Create a new, generic sensor event listener, type of sensor will be retrieved from the event itself
     private val sensorEventListener = object : SensorEventListener {
         override fun onSensorChanged(event: android.hardware.SensorEvent) {
@@ -113,7 +114,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main_layout)
         Log.d(TAG, "onCreate")
-        db = Room.databaseBuilder(this, SensorDatabase::class.java, "sensor_database").build()
+        db = Room.databaseBuilder(this, SensorDatabase::class.java, "sensor_database_final").build()
         dao = db.sensorDao
         // ASK FOR ALL PERMISSIONS
 
@@ -148,10 +149,6 @@ class MainActivity : ComponentActivity() {
         }
 
 
-        val myButton = findViewById<Button>(R.id.btButton)
-        myButton.setOnClickListener {
-        }
-
 
         var resp = JSONObject()
         val callback = object : VolleyCallback {
@@ -160,9 +157,6 @@ class MainActivity : ComponentActivity() {
                 Log.d("Respooooonse", response.toString())
                 resp = response;
                 print(resp)
-                val textView = findViewById<TextView>(R.id.textView)
-
-                textView.setText(resp.getJSONArray("users").getJSONObject(0).getString("name"))
             }
 
             override fun onError(error: VolleyError) {
@@ -170,22 +164,56 @@ class MainActivity : ComponentActivity() {
                 throw RuntimeException("Error: $error")
             }
         }
-        val APIActioner = findViewById<Button>(R.id.API)
-        APIActioner.setOnClickListener{
-            /*
-            val req = VolleyRequest(this)
-            resp = req.sendRequest(callback, "/api/users/all", Request.Method.GET, null)
-            */
-            // Thread to await the data from the wearable device
 
-            // Thread to await the data from the wearable device
-            // Send a simple message to the wearable
-            //sendWearableMessage()
-        }
         Log.d("Thread", "Starting thread")
 
         val intent = Intent(applicationContext, SensorsService::class.java)
+        intent.putExtra("userStates", "none")
         startForegroundService(intent)
+
+        // Get button from layout
+        val sleepButton = findViewById<Button>(R.id.btnSleep)
+        val walkingButton = findViewById<Button>(R.id.btnWalking)
+        val sportButton = findViewById<Button>(R.id.btnSport)
+        val restingButton = findViewById<Button>(R.id.btnResting)
+        val cancelButton = findViewById<Button>(R.id.btnCancel)
+
+        // Set the onClickListener for the button
+        sleepButton.setOnClickListener {
+            // Send the user state to the server
+            val updateIntent = Intent("com.example.edge_health_wear.UPDATE_USER_STATE").apply {
+                putExtra("userState", "sleeping")
+            }
+            sendBroadcast(updateIntent)
+        }
+        walkingButton.setOnClickListener {
+            // Send the user state to the server
+            val updateIntent = Intent("com.example.edge_health_wear.UPDATE_USER_STATE").apply {
+                putExtra("userState", "walking")
+            }
+            sendBroadcast(updateIntent)
+        }
+        sportButton.setOnClickListener {
+            // Send the user state to the server
+            val updateIntent = Intent("com.example.edge_health_wear.UPDATE_USER_STATE").apply {
+                putExtra("userState", "sport")
+            }
+            sendBroadcast(updateIntent)
+        }
+        restingButton.setOnClickListener {
+            // Send the user state to the server
+            val updateIntent = Intent("com.example.edge_health_wear.UPDATE_USER_STATE").apply {
+                putExtra("userState", "resting")
+            }
+            sendBroadcast(updateIntent)
+        }
+        cancelButton.setOnClickListener {
+            // Send the user state to the server
+            val updateIntent = Intent("com.example.edge_health_wear.UPDATE_USER_STATE").apply {
+                putExtra("userState", "none")
+            }
+            sendBroadcast(updateIntent)
+        }
     }
 
     private fun connectToNode(){

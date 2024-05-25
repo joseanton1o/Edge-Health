@@ -15,7 +15,8 @@ SENSOR_DATA = [{
         "light":20,
         "step_counter":1254,
         "timestamp": 456454343214,
-        "beats_per_min":110.0
+        "beats_per_min":110.0,
+        "user_status": "none"
     }]
 def create_user(username, email, password, dob, full_name, context):
     user = {

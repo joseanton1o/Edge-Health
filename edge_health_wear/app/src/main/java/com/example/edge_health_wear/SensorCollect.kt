@@ -16,11 +16,13 @@ data class SensorCollect(
     @ColumnInfo(name = "accelerometer_z") var accelerometerZ: Double = 0.0,
     @ColumnInfo(name = "light") var light: Double = 0.0,
     @ColumnInfo(name = "stepCounter") var stepCounter: Int = 0,
+    @ColumnInfo(name = "userState") var userState: String = "none",
     @PrimaryKey var timestamp: Long = System.currentTimeMillis() / 1000 // Unix epoch time in seconds
 ){
     override fun toString () : String {
         return """
             {
+                "userState": "$userState",
                 "heartRate": $heartRate,
                 "gyroscope": [$gyroscopeX, $gyroscopeY, $gyroscopeZ],
                 "accelerometer": [$accelerometerX, $accelerometerY, $accelerometerZ],
@@ -44,6 +46,7 @@ data class SensorCollect(
                 floatEquals(accelerometerY.toFloat(), other.accelerometerY.toFloat()) &&
                 floatEquals(accelerometerZ.toFloat(), other.accelerometerZ.toFloat()) &&
                 floatEquals(light.toFloat(), other.light.toFloat()) &&
+                userState.equals(other.userState) &&
                 stepCounter == other.stepCounter
     }
 
@@ -58,6 +61,7 @@ data class SensorCollect(
             accelerometerZ,
             light,
             stepCounter,
+            userState,
             timestamp
         )
     }

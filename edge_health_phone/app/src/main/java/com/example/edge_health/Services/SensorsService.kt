@@ -82,7 +82,7 @@ public class SensorsService : Service() , OnMessageReceivedListener{
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
         this.intent = intent!!
-        db = Room.databaseBuilder(this, SensorDatabase::class.java, "sensor-database-final").build()
+        db = Room.databaseBuilder(this, SensorDatabase::class.java, "sensor-final-database").build()
         sensorDao = db.sensorDao()
         Log.d("Service", db.toString())
         Log.d("Service", "Service started")

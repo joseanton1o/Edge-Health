@@ -32,7 +32,9 @@ public class VolleyRequest {
     public void setHeaders(Map<String, String> headers) {
         this.headers = headers;
     }
-
+    public void addHeader(String key, String value){
+        headers.put(key, value);
+    }
     /**
      * Ejemplo de como enviar una petición GET al servidor que está montado en el propio ordenador
      *

@@ -31,6 +31,7 @@ import com.example.edge_health.Databases.SensorDao;
 import com.example.edge_health.Databases.SensorDatabase;
 import com.example.edge_health.SensorsCollect;
 import com.example.edge_health.Services.SensorsService;
+import com.example.edge_health.Token;
 import com.example.edge_health.VolleyCallback;
 import com.example.edge_health.VolleyRequest;
 import com.github.mikephil.charting.charts.BarChart;
@@ -71,6 +72,7 @@ public class MainActivity extends AppCompatActivity{
     Integer selectedOption = 0;
     // End of selector section
     private int numberOfDataPoints;
+    private Token token;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
@@ -80,15 +82,15 @@ public class MainActivity extends AppCompatActivity{
         // Check if the user is logged in
         TokenDatabase tokenDb = Room.databaseBuilder(this, TokenDatabase.class, "token-database")
                 .allowMainThreadQueries().build(); // Query is really fast so it's okay to run it on the main thread
-
-        if (tokenDb.tokenDao().getById(1) == null){
+        token = tokenDb.tokenDao().getById(1);
+        if (token == null){
             // Launch login activity for testing
             Intent loginIntent = new Intent(this, LoginActivity.class);
             finish();
             startActivity(loginIntent);
         }
         else {
-            db = Room.databaseBuilder(this, SensorDatabase.class, "sensor-database-final").build();
+            db = Room.databaseBuilder(this, SensorDatabase.class, "sensor-final-database").build();
             sensorDao = db.sensorDao();
 
 
@@ -226,6 +228,14 @@ public class MainActivity extends AppCompatActivity{
                 @Override
                 public void onError(VolleyError error) {
                     Log.d("Error", error.toString());
+
+                    // if the error is 401, then the token is expired and the user should be redirected to the login Activity
+                    if (error.networkResponse.statusCode == 401) {
+                        Intent loginIntent = new Intent(currentActivity, LoginActivity.class);
+                        finish();
+                        startActivity(loginIntent);
+                    }
+
                 }
             };
             Intent intent = new Intent(this, SensorsService.class); // val intent = Intent(applicationContext, SensorsService::class.java)
@@ -237,9 +247,10 @@ public class MainActivity extends AppCompatActivity{
                 public void run() {
                     Log.d("SyncData", "Syncing data");
                     SensorsCollect[] syncData = sensorDao.getFirst20NotSent();
+                    syncReq.addHeader("Authorization", "Bearer " + token.getToken());
                     Log.d("SyncData", syncData.toString());
                     stopService(intent); // stopService(intent
-                    while (syncData.length > 0) {
+                    //while (syncData.length > 0) {
                         for (SensorsCollect data : syncData) {
                             // Send the data to the server
                             JSONObject dataJson = data.toJson();
@@ -251,7 +262,7 @@ public class MainActivity extends AppCompatActivity{
                             sensorDao.setSent(data.timestamp);
                         }
                         syncData = sensorDao.getFirst20NotSent();
-                    }
+                    //}
                     startForegroundService(intent); // startService(intent)
 
                 }

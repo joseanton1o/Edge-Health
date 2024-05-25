@@ -6,9 +6,11 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
+import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.hardware.Sensor
 import android.hardware.SensorEventListener
@@ -129,6 +131,8 @@ class SensorsService : Service() {
 
     }
     private lateinit var notification: Notification
+    private lateinit var updateReceiver: BroadcastReceiver
+    private var userState: String? = "none"
     override fun onCreate() {
         super.onCreate()
         executor = Executors.newSingleThreadScheduledExecutor()
@@ -139,6 +143,20 @@ class SensorsService : Service() {
             .setContentTitle("Foreground Service")
             .setContentText("Service is running in the foreground")
             .build()
+
+        updateReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                userState = intent?.getStringExtra("userState")
+                if (userState == null) {
+                    userState = "none"
+                }
+
+                Log.d(TAG, "User state: $userState")
+            }
+        }
+
+        val filter = IntentFilter("com.example.edge_health_wear.UPDATE_USER_STATE")
+        registerReceiver(updateReceiver, filter)
 
         startForeground(1, notification)
         // Initialize the ScheduledExecutorService with a single thread
@@ -237,6 +255,8 @@ class SensorsService : Service() {
         else {
             currentData.stepCounter = 0
         }
+
+        currentData.userState = userState.toString()
 
         if (nodeId != null) {
             Wearable.getMessageClient(this).sendMessage(nodeId!!, "/sensores", data.toString().toByteArray())
