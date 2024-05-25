@@ -24,6 +24,10 @@ class UserDAO:
         user = self.collection.find_one({"username":username})
         return user
     
+    def get_by_email(self, email):
+        user = self.collection.find_one({"email":email})
+        return user
+
     def create(self, user_json):
         new_user = self.collection.insert_one(user_json)
         return new_user.inserted_id

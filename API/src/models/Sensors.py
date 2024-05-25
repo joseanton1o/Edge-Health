@@ -53,6 +53,7 @@ class Sensors:
         self.step_counter = data["step_counter"]
         self.beats_per_min = data["beats_per_min"]
         self.user_status = data["user_status"]
+        self.timestamp = data["timestamp"]
 
     def to_json(self):
         return {
