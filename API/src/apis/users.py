@@ -63,8 +63,11 @@ def create_user():
 
     # Check if the user already exists
     if users_dao.get_by_username(request.json['username']):
-        return {'msg':'User already exists'}, 400
-
+        return {'msg':'Username already exists'}, 409 # 409 - Conflict
+    
+    if users_dao.get_by_email(request.json['email']):
+        return {'msg':'Email already exists'}, 409 # 409 - Conflict
+    
     if not request.json.get('admin'): # If the user has not specified if the user is an admin, set it to False
         request.json['admin'] = False
 
