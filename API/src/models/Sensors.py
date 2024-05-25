@@ -95,6 +95,12 @@ class Sensors:
             return False
         if "user_status" not in sensor_json:
             return False
+        
+        # get user_status value and check it from a list of possible values
+        user_status = sensor_json["user_status"]
+        if user_status not in ["none", "resting", "walking", "sport", "sleeping"]:  
+            return False
+
         # Check if the number of keys is correct
         if len(sensor_json.keys()) != 12:
             return False
