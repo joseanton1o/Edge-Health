@@ -86,9 +86,9 @@ def delete_user(username):
     return {'msg':'User deleted'}, 200
 
 @app.route(ENDPOINT + '/all', methods=['GET'])
-@token_required(users_dao)
-def all_users(requester_username):
-    logger.info(f'User {requester_username} requested all users')
+@token_required
+def all_users(user_data):
+    logger.info(f'User {user_data.get('username')} requested all users')
     users = []
     for user in users_dao.collection.find({}):
         user.pop('_id')

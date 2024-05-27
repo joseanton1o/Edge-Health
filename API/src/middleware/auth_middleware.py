@@ -31,6 +31,9 @@ def token_required(f):
                 "user_id": user_id
             }
 
+            if user_data.get('admin', False):
+                user_data['admin'] = True
+
             if current_user is None:
                 return {
                 "message": "Invalid Authentication token!",
@@ -39,10 +42,10 @@ def token_required(f):
             }, 401
         except Exception as e:
             return {
-                "message": "Something went wrong",
+                "message": "Something went wrong while decoding token!",
                 "data": None,
                 "error": str(e)
-            }, 401
+            }, 500
 
         return f(user_data, *args, **kwargs)
     return decorated
