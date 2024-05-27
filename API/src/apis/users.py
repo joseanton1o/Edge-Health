@@ -88,7 +88,7 @@ def delete_user(username):
 @app.route(ENDPOINT + '/all', methods=['GET'])
 @token_required
 def all_users(user_data):
-    logger.info(f'User {user_data.get('username')} requested all users')
+    logger.info(f'User {user_data.get('username', 'JWT_ERROR')} requested all users')
     users = []
     for user in users_dao.collection.find({}):
         user.pop('_id')
