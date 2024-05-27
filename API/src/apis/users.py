@@ -86,9 +86,9 @@ def delete_user(username):
     return {'msg':'User deleted'}, 200
 
 @app.route(ENDPOINT + '/all', methods=['GET'])
-@token_required(users_dao)
-def all_users(requester_username):
-    logger.info(f'User {requester_username} requested all users')
+@token_required
+def all_users(user_data):
+    logger.info(f"User {user_data.get('username', 'JWT_ERROR')} requested all users")
     users = []
     for user in users_dao.collection.find({}):
         user.pop('_id')
@@ -112,10 +112,17 @@ def login():
         logger.info(f'User {user} logged in')
         logger.info(str(user['_id']))
         
-        if user['admin']:
-            user['token'] = jwt.encode({'user_id':str(user['_id']), 'admin':True }, JWT_SECRET , algorithm='HS256')
+        jwt_payload = {
+            'user_id':str(user['_id']),
+            'username':user['username']
+        }
+
+        if user.get('admin', False):
+            jwt_payload['admin'] = True
+
+            user['token'] = jwt.encode(jwt_payload, JWT_SECRET, algorithm='HS256')
         else:
-            user['token'] = jwt.encode({'user_id':str(user['_id'])}, JWT_SECRET, algorithm='HS256')
+            user['token'] = jwt.encode(jwt_payload, JWT_SECRET, algorithm='HS256')
         
         user.pop('_id')
         return user, 200
