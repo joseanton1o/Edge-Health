@@ -40,6 +40,18 @@ def token_required(f):
                 "data": None,
                 "error": "Unauthorized"
             }, 401
+        except jwt.ExpiredSignatureError:
+            return {
+                "message": "Token has expired, please login again!",
+                "data": None,
+                "error": "Unauthorized"
+            }, 401
+        except jwt.InvalidTokenError:
+            return {
+                "message": "Invalid token, please try again with a new token!",
+                "data": None,
+                "error": "Unauthorized"
+            }, 401
         except Exception as e:
             return {
                 "message": "Something went wrong while decoding token!",
