@@ -29,16 +29,12 @@ MONGO_USERNAME = os.getenv('MONGO_INITDB_ROOT_USERNAME')
 MONGO_PASSWORD = os.getenv('MONGO_INITDB_ROOT_PASSWORD')
 
 sensors_dao = None
-users_dao = None
 def set_up_db_connection():
     global sensors_dao
-    global users_dao
     mongo_string = f'mongodb://{MONGO_USERNAME}:{MONGO_PASSWORD}@mongodb:27017/'
     print(mongo_string)
     client = MongoClient(mongo_string)
     sensors_dao = SensorsDAO(client)
-    users_dao = UserDAO(client) 
-
 set_up_db_connection()
 
 @app.route(ENDPOINT, methods=['POST']) # decorator that tells Flask what URL should trigger our function
@@ -55,14 +51,18 @@ def index():
         return response
 
 @app.route(ENDPOINT + '/provision', methods=['POST'])
-@token_required(users_dao)
-def provision(requester_username): # Get the username from the token
+@token_required
+def provision(user_data): # Get the username from the token
     logger.info('Provisioning sensor')
     received_data = request.json
 
-    user_id = str(users_dao.get_by_username(requester_username)['_id'])
+    user_id = user_data.get('user_id', None)
     logger.info(user_id)
-
+    if user_id is None:
+        return {
+            'error':'Token malformed, user id in jwt is missing, try to relogin'
+            }, 500
+    
     received_data['user_id'] = str(user_id)
 
     # Check if the sensor data is correct
@@ -83,26 +83,32 @@ def provision(requester_username): # Get the username from the token
         return {'execption':str(e)}, 500
 
 @app.route(ENDPOINT, methods=['GET'])
-@token_required(users_dao)
-def get_user_data(requester_username): 
+@token_required
+def get_user_data(user_data): 
     try:
-        user_id = users_dao.get_by_username(requester_username)['_id']
+        user_id = user_data.get('user_id', None)
         logger.info(user_id)
+        if user_id is None:
+            return {'error':'Token malformed, user id in jwt is missing, try to relogin'}, 500
         user_data = sensors_dao.get_sensors_by_user_id(str(user_id))
 
         return {'msg':'User data retrieved', 'user_data':user_data}, 200
     except Exception as e:
         return {'msg':str(e)}, 500
 
-@app.route(ENDPOINT + '/delete_all', methods=['DELETE']) # This is meant to be a protected endpoint that only the fakeuser can access TODO: change to use a middleware
-@token_required(users_dao)
-def delete_all(requester_username):
-
-    if requester_username != 'fakeuser':
+@app.route(ENDPOINT + '/delete_all', methods=['DELETE']) 
+@token_required
+def delete_all(user_data):
+    
+    if user_data.get('Admin', False):
         return {'msg':'You are not authorized to delete all data'}, 401
 
     try:
-        user_id = users_dao.get_by_username(requester_username)['_id']
+        user_id = user_data.get('user_id', None)
+
+        if user_id is None:
+            return {'error':'Token malformed'}, 500
+
         logger.info(user_id)
         user_data = sensors_dao._delete_all_sensors_by_user_id(str(user_id))
 
