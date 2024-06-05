@@ -12,6 +12,25 @@ services:
       - users_service
     networks:
       - internal_network
+
+  models_service:
+    image: python:3.8
+    ports:
+      - "5002:5002"
+    command: >
+      sh -c "export PYTHONPATH=/src:$PYTHONPATH && pip install -r /src/apis/models_requirements.txt && python3 /src/apis/models.py"
+    volumes:
+      - ./src/apis/:/src/apis
+      - ./src/middleware/:/src/middleware
+      - ./src/models/:/src/models
+      - ./src/DAOS/:/src/DAOS
+    env_file:
+      - .env
+    depends_on:
+      - mongodb
+    networks:
+      - internal_network
+
   sensors_service:
     image: python:3.8
     ports:
