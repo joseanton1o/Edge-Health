@@ -3,6 +3,7 @@ package com.example.edge_health_wear
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import org.json.JSONObject
 
 @Entity
 data class SensorCollect(
@@ -19,6 +20,22 @@ data class SensorCollect(
     @ColumnInfo(name = "userState") var userState: String = "none",
     @PrimaryKey var timestamp: Long = System.currentTimeMillis() / 1000 // Unix epoch time in seconds
 ){
+
+    // Constructor from JSON
+    constructor(jsonObj: JSONObject) : this() {
+        heartRate = jsonObj.getDouble("heartRate")
+        gyroscopeX = jsonObj.getJSONArray("gyroscope").getDouble(0)
+        gyroscopeY = jsonObj.getJSONArray("gyroscope").getDouble(1)
+        gyroscopeZ = jsonObj.getJSONArray("gyroscope").getDouble(2)
+        accelerometerX = jsonObj.getJSONArray("accelerometer").getDouble(0)
+        accelerometerY = jsonObj.getJSONArray("accelerometer").getDouble(1)
+        accelerometerZ = jsonObj.getJSONArray("accelerometer").getDouble(2)
+        light = jsonObj.getDouble("light")
+        stepCounter = jsonObj.getInt("stepCounter")
+        userState = jsonObj.getString("userState")
+        timestamp = jsonObj.getLong("timestamp")
+    }
+
     override fun toString () : String {
         return """
             {

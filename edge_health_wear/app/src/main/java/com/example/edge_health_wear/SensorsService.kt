@@ -42,6 +42,7 @@ class SensorsService : Service() {
     private lateinit var executor: ScheduledExecutorService
     private var currentData: SensorCollect = SensorCollect()
     private var prevSent: SensorCollect? = null
+    private var lastStepSent = 0
     private lateinit var sensorManager: SensorManager
     private var nodeId: String? = null
     private var wifiConnected: Boolean = false
@@ -98,7 +99,7 @@ class SensorsService : Service() {
             val data: JSONObject = JSONObject(currentData.toString())
 
             if (prevSent == null) {
-                prevSent = currentData.deepCopy()
+
                 Log.d("Thread", "Sending message")
                 sendWearableMessage()
             }
@@ -109,7 +110,6 @@ class SensorsService : Service() {
                 Log.d("Thread", prevData.toString())
             }
             else {
-                prevSent = currentData.deepCopy()
                 Log.d("Thread", "Sending message")
                 sendWearableMessage()
             }
@@ -157,7 +157,7 @@ class SensorsService : Service() {
 
         val filter = IntentFilter("com.example.edge_health_wear.UPDATE_USER_STATE")
         registerReceiver(updateReceiver, filter)
-
+        prevSent = null
         startForeground(1, notification)
         // Initialize the ScheduledExecutorService with a single thread
 
@@ -245,23 +245,33 @@ class SensorsService : Service() {
         // on the wearable device
         Log.d("Sending message", "Sending message to node ${nodeId}")
         currentData.timestamp = Date().time / 1000
-        val data: JSONObject = JSONObject(this.currentData.toString())
+        var capturedData: SensorCollect = currentData.deepCopy()
+        val data: JSONObject = JSONObject(capturedData.toString())
         Log.d("Data", data.toString())
 
-        if (prevSent != null) {
+        // If the step counter is the same as the last step counter sent, the current data steps will be 0
+        Log.d("Step counter", capturedData.stepCounter.toString())
+        Log.d("Last step sent", lastStepSent.toString())
             // The current data steps will be the difference between the current steps and the previous steps
-            currentData.stepCounter -= prevSent!!.stepCounter
-        }
-        else {
-            currentData.stepCounter = 0
-        }
+            if (capturedData.stepCounter == lastStepSent) {
+                capturedData.stepCounter = 0
+            }
+            else {
+                var sending = capturedData.stepCounter
+                Log.d("Sending steps", sending.toString())
+                capturedData.stepCounter -= lastStepSent
+                lastStepSent = sending
 
-        currentData.userState = userState.toString()
+            }
+
+
+        capturedData.userState = userState.toString()
 
         if (nodeId != null) {
-            Wearable.getMessageClient(this).sendMessage(nodeId!!, "/sensores", data.toString().toByteArray())
+            Wearable.getMessageClient(this).sendMessage(nodeId!!, "/sensores", capturedData.toString().toByteArray())
 
             data_sent += 1
+            prevSent = SensorCollect(data)
             return true
         }
         else{
@@ -270,7 +280,7 @@ class SensorsService : Service() {
             Log.d("Sending message", "Node not connected, saving data to database")
 
             runBlocking {
-                dao.insertSensorData(currentData)
+                dao.insertSensorData(capturedData)
             }
             data_sent += 1
         }
