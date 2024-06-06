@@ -51,6 +51,10 @@ class SensorsDAO:
         new_sensor = self.collection.insert_one(sensor_json)
         return new_sensor.inserted_id
 
+    def create_many(self, sensors_json):
+        new_sensors = self.collection.insert_many(sensors_json)
+        return new_sensors.inserted_ids
+
     def _delete_all_sensors_by_user_id(self, user_id):
         """
         Delete all the sensors data for a specific user

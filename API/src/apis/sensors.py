@@ -64,19 +64,22 @@ def provision(user_data): # Get the username from the token
             }, 500
     
     # Check if the sensor data is correct
-    try:
-        sensor_data = Sensors(received_data)
-    except Exception as e:
+
+    logger.info(received_data)
+    
+    valid_sensor = Sensors.check_sensor_json(received_data)
+
+    if not valid_sensor: 
         return {
-                'error':'Invalid sensor data', 
-                'example_body': Sensors.json_example()
-                }, 400
+            'error':'Invalid sensor data', 
+            'example_body': Sensors.json_example()
+            }, 400
     
     received_data['user_id'] = str(user_id)
 
     try:
         # Provision the sensor
-        sensor_data_id = sensors_dao.create(sensor_data.to_json())
+        sensor_data_id = sensors_dao.create(received_data)
 
         return {'msg':'Sensor provisioned', 'sensor_data_id':str(sensor_data_id)}, 201
     except Exception as e:

@@ -30,6 +30,21 @@ ENDPOINT = '/api/models'
 logging.basicConfig(level=logging.INFO)  # Set the logging level to INFO
 # Define a logger
 logger = logging.getLogger(__name__)
+# Load environment variables from .env file
+dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
+load_dotenv(dotenv_path)
+
+MONGO_USERNAME = os.getenv('MONGO_INITDB_ROOT_USERNAME')
+MONGO_PASSWORD = os.getenv('MONGO_INITDB_ROOT_PASSWORD')
+
+sensors_dao = None
+def set_up_db_connection():
+    global sensors_dao
+    mongo_string = f'mongodb://{MONGO_USERNAME}:{MONGO_PASSWORD}@mongodb:27017/'
+    print(mongo_string)
+    client = MongoClient(mongo_string)
+    sensors_dao = SensorsDAO(client)
+set_up_db_connection()
 
 @app.route(ENDPOINT, methods=['POST']) # decorator that tells Flask what URL should trigger our function
 def index():
@@ -64,6 +79,18 @@ def train(user_data):
 
         if not correct_data:
             return {'msg':'Invalid data', 'valid_data_example': Sensors.json_example()}, 400      
+        
+
+    # Load the data
+    dataset = pd.DataFrame(received_data['data'])
+    # add user_id to the data
+    for element in received_data['data']:
+        element['user_id'] = user_data['user_id']
+
+    # First, save data in the database
+    sensors_dao.create_many(received_data['data'])
+
+    
     # Search for the user_id inside saved_models folder
     # if theres no user copy and create a new .keras file with the user_id
     # Train the model with the data provided
@@ -83,8 +110,6 @@ def train(user_data):
     except Exception as e:
         return {'msg':'No model found', "exception": str(e)}, 400
 
-    # Load the data
-    dataset = pd.DataFrame(received_data['data'])
 
     # Separate features and target
     X_vector = dataset.drop(columns=['user_status', 'timestamp'])
