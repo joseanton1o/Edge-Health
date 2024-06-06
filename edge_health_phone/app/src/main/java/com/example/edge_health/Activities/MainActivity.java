@@ -93,21 +93,13 @@ public class MainActivity extends AppCompatActivity{
             db = Room.databaseBuilder(this, SensorDatabase.class, "sensor-final-database").build();
             sensorDao = db.sensorDao();
 
-
-            // Mock data for the dashboard
             dashboardData = new ArrayList<BarEntry>();
-            // TODO: Change the data to the actual data from the database
-            // TODO: 0 will be 00:00 to 00:59, 1 will be 01:00 to 01:59, etc
-            // TODO: The data will be the average of the data from the sensors within that hour
-            // TODO: So in order to display the labels we will need to check hour and return the correct string
 
             dashboardChart = findViewById(R.id.barChart);
 
-            // Selector section
-
             selectorOptions.add("Last 24 hours");
             selectorOptions.add("Last 7 days");
-            selectorOptions.add("Last 30 days");
+            selectorOptions.add("Last 31 days");
 
             // Get the selector from the activity_main.xml
             Button selector = findViewById(R.id.selectOpt);
@@ -131,8 +123,8 @@ public class MainActivity extends AppCompatActivity{
                         lastTimestamp = new Date().getTime() - 604800 * 1000;
                         numberOfDataPoints = 7;
                     } else {
-                        lastTimestamp = new Date().getTime() - (long) 2592000 * 1000;
-                        numberOfDataPoints = 30;
+                        lastTimestamp = new Date().getTime() - (long) 2678400 * 1000;
+                        numberOfDataPoints = 31;
                     }
                     Thread test = new Thread(new Runnable() {
 
@@ -324,7 +316,7 @@ public class MainActivity extends AppCompatActivity{
         } else {
             Log.d("Data", "monthly data number of data points: " + this.numberOfDataPoints + "   selected option: " + selectedOption);
             // Add labels "1", "2", "3", "4", etc
-            for (int i = 0; i < this.numberOfDataPoints; i++) {
+            for (int i = 1; i < this.numberOfDataPoints + 1; i++) {
                 xAxisLables.add(String.format("%d", i));
             }
         }
@@ -356,6 +348,7 @@ public class MainActivity extends AppCompatActivity{
                 return xAxisLables.get((int) value);
             }
         });
+        Log.d("Data", dashboardData.toString());
         dashboardChart.setData(dashboardBarData);
 
         cal.setTime(new Date()); // Reset the calendar to the current date
@@ -367,6 +360,11 @@ public class MainActivity extends AppCompatActivity{
         HashMap<Integer,SensorsCollect> normalizedData = new HashMap<>();
 
         Integer lastHour = -1; // Set the current hour to -1 so that the first hour is 0
+
+        if (selectedOption == 2) {
+            lastHour = 0; // Set the current day to 0 so that the first day is 1
+        }
+
         Calendar cal = Calendar.getInstance();
 
         Double averageHeartRate = 0.0;
@@ -391,6 +389,9 @@ public class MainActivity extends AppCompatActivity{
             }
             else {
                 currentHour = cal.get(Calendar.DAY_OF_MONTH);
+                if (currentHour > 29) {
+                    new Exception("Error: Current hour is greater than 29");
+                }
             }
 
             if (currentHour != lastHour) { // We have a new hour
