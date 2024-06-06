@@ -37,6 +37,8 @@ import random
 #####################
 
 EMAIL = "qa@email.com"
+HOST = "http://127.0.0.1"
+
 
 #####################
 # AUXILIARY FUNCTIONS
@@ -51,7 +53,7 @@ def create_user(username, email, password, dob, full_name, context):
         "full_name": full_name
     }
 
-    response = requests.post("http://localhost/api/users/create", json=user)
+    response = requests.post(f"{HOST}/api/users/create", json=user)
     context.response = response
 
 
@@ -90,7 +92,7 @@ def login_with_bad_credentials(context):
         "username": context.username,
         "password": "badpassword"
     }
-    response = requests.post("http://localhost/api/users/login", json=user)
+    response = requests.post(f"{HOST}/api/users/login", json=user)
     context.response = response
 
 @when('I login with valid credentials')
@@ -99,17 +101,17 @@ def login_with_valid_credentials(context):
         "username": context.username,
         "password": "qa"
     }
-    response = requests.post("http://localhost/api/users/login", json=user)
+    response = requests.post(f"{HOST}/api/users/login", json=user)
     context.response = response
 
 @when('I access a protected route without a token')
 def access_no_token(context):
-    response = requests.get("http://localhost/api/users/all")
+    response = requests.get(f"{HOST}/api/users/all")
     context.response = response
 
 @when('I access a protected route with an invalid token')
 def access_invalid_token(context):
-    response = requests.get("http://localhost/api/users/all", headers={"Authorization": "Bearer invalidtoken"})
+    response = requests.get(f"{HOST}/api/users/all", headers={"Authorization": "Bearer invalidtoken"})
     context.response = response
 
 @when('I access a protected route with a valid token')
@@ -118,9 +120,9 @@ def access_valid_token(context):
         "username": context.username,
         "password": "qa"
     }
-    response = requests.post("http://localhost/api/users/login", json=user)
+    response = requests.post(f"{HOST}/api/users/login", json=user)
     token = response.json()["token"]
-    response = requests.get("http://localhost/api/users/all", headers={"Authorization": f"Bearer {token}"})
+    response = requests.get(f"{HOST}/api/users/all", headers={"Authorization": f"Bearer {token}"})
     context.response = response
 
 ######################################################

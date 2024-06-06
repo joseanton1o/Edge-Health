@@ -30,6 +30,9 @@ INVALID_SENSOR_DATA = [{
         "beats_per_min":110.0,
         "user_status": "none"
     }]
+
+HOST = "http://127.0.0.1"
+
 def create_user(username, email, password, dob, full_name, context):
     user = {
         "username": username,
@@ -39,7 +42,7 @@ def create_user(username, email, password, dob, full_name, context):
         "full_name": full_name
     }
 
-    response = requests.post("http://localhost/api/users/create", json=user)
+    response = requests.post(f"{HOST}/api/users/create", json=user)
     print(response)
     context.response = response
 
@@ -51,7 +54,7 @@ def create_qa_user(context):
     random_username = "".join([random.choice("abcdefghijklmnopqrstuvwxyz") for i in range(10)])
     create_user(random_username, ranadom_email, "qa", "30/12/1990", "QA TESTER", context)
 
-    context.token = requests.post("http://localhost/api/users/login", json={"username": random_username, "password": "qa"})
+    context.token = requests.post(f"{HOST}/api/users/login", json={"username": random_username, "password": "qa"})
 
     assert context.token.status_code == 200
 
@@ -61,28 +64,28 @@ def create_qa_user(context):
 @when('I send new valid sensor data')
 def send_new_sensor_data(context):
     for data in SENSOR_DATA:
-        response = requests.post("http://localhost/api/sensors/provision", json=data, headers={"Authorization": f"Bearer {context.token.json()['token']}"})
+        response = requests.post(f"{HOST}/api/sensors/provision", json=data, headers={"Authorization": f"Bearer {context.token.json()['token']}"})
     context.response = response
 
 @when('I send new invalid sensor data')
 def send_new_invalid_sensor_data(context):
     for data in INVALID_SENSOR_DATA:
-        response = requests.post("http://localhost/api/sensors/provision", json=data, headers={"Authorization": f"Bearer {context.token.json()['token']}"})
+        response = requests.post(f"{HOST}/api/sensors/provision", json=data, headers={"Authorization": f"Bearer {context.token.json()['token']}"})
     context.response = response
 
 @when('I send a request to retrieve sensor data')
 def send_request_retrieve_sensor_data(context):
-    response = requests.get("http://localhost/api/sensors", headers={"Authorization": f"Bearer {context.token.json()['token']}"})
+    response = requests.get(f"{HOST}/api/sensors", headers={"Authorization": f"Bearer {context.token.json()['token']}"})
     context.response = response
 
 @when('I send new valid sensor data with false auth token')
 def send_new_sensor_data_invalid_token(context):
-    response = requests.post("http://localhost/api/sensors/provision", json=SENSOR_DATA[0], headers={"Authorization": f"Bearer invalid_jwt_token"})
+    response = requests.post(f"{HOST}/api/sensors/provision", json=SENSOR_DATA[0], headers={"Authorization": f"Bearer invalid_jwt_token"})
     context.response = response
 
 @when('I send a request to provision sensor data without authentication')
 def send_new_sensor_data_no_token(context):
-    response = requests.post("http://localhost/api/sensors/provision", json=SENSOR_DATA[0])
+    response = requests.post(f"{HOST}/api/sensors/provision", json=SENSOR_DATA[0])
     context.response = response
 ######################################################
 #################### THEN SECTION ####################

@@ -31,11 +31,19 @@ scaler = StandardScaler()
 X_train = scaler.fit_transform(X_train)
 X_test = scaler.transform(X_test)
 
+statuses_to_int = {'resting': 0, 'sleeping': 1, 'sport': 2, 'walking': 3}
+int_to_statuses = {0: 'resting', 1: 'sleeping', 2: 'sport', 3: 'walking'}
+y_train_encoded = [statuses_to_int[label] for label in y_train]
+
+num_classes = len(statuses_to_int)
+y_train_encoded = tf.keras.utils.to_categorical(y_train_encoded, num_classes)
+print(y_train_encoded)
+print(y_train)
 # Build a TensorFlow model
 model = tf.keras.Sequential([
     tf.keras.layers.Dense(128, activation='relu', input_shape=(X_train.shape[1],)),
     tf.keras.layers.Dense(64, activation='relu'),
-    tf.keras.layers.Dense(y_train.shape[1], activation='softmax')
+    tf.keras.layers.Dense(num_classes, activation='softmax')
 ])
 
 # Compile the model

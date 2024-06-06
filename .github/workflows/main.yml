@@ -50,6 +50,11 @@ jobs:
         cd API/test/features
         behave
 
+    - name: Nginx logs
+      if: always()
+      run: |
+        docker logs api_nginx_1
+
     - name: Shut down Docker Compose
       run: |
         docker-compose -f API/docker-compose.yml down

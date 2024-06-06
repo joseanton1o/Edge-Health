@@ -72,8 +72,6 @@ class Sensors:
 
     @classmethod
     def check_sensor_json(cls, sensor_json):
-        if "user_id" not in sensor_json:
-            return False
         if "accelerometer_x" not in sensor_json:
             return False
         if "accelerometer_y" not in sensor_json:
@@ -103,7 +101,7 @@ class Sensors:
             return False
 
         # Check if the number of keys is correct
-        if len(sensor_json.keys()) != 12:
+        if len(sensor_json.keys()) != 11:
             return False
         
         return True
