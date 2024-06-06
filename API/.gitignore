@@ -2,3 +2,4 @@
 mongo_data
 *.pyc
 __pycache__
+saved_model

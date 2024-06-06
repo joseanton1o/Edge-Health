@@ -63,8 +63,6 @@ def provision(user_data): # Get the username from the token
             'error':'Token malformed, user id in jwt is missing, try to relogin'
             }, 500
     
-    received_data['user_id'] = str(user_id)
-
     # Check if the sensor data is correct
     try:
         sensor_data = Sensors(received_data)
@@ -74,6 +72,8 @@ def provision(user_data): # Get the username from the token
                 'example_body': Sensors.json_example()
                 }, 400
     
+    received_data['user_id'] = str(user_id)
+
     try:
         # Provision the sensor
         sensor_data_id = sensors_dao.create(sensor_data.to_json())
