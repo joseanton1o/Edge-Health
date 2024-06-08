@@ -9,6 +9,7 @@ import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.RequestFuture;
 import com.android.volley.toolbox.Volley;
 import org.json.JSONObject;
 
@@ -19,7 +20,7 @@ public class VolleyRequest {
     private Integer statusCode = null;
     private RequestQueue queue = null;
     private final String url = "http://192.168.0.34:80";
-
+    private static Integer responseTimeout = 5;
     private JSONObject resp = null;
     private Map<String, String> headers = new HashMap<String, String>();
     public VolleyRequest(Context ctx){
@@ -68,10 +69,40 @@ public class VolleyRequest {
                 return headers;
             }
         };
-        Log.d("ERR","LLEGAAAAA");
-        // What does this line do?
+
         queue.add(jsonObjectRequest);
-        Log.d("a",resp.toString());
         return resp;
+    }
+
+    // Syncronous request
+    public JSONObject sendRequestSync(String endpoint, int method, JSONObject body, Response.ErrorListener errorListener) {
+        RequestFuture<JSONObject> future = RequestFuture.newFuture();
+        JsonObjectRequest request = new JsonObjectRequest(method, url + endpoint, body, future, errorListener) {
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                return headers;
+            }
+            @Override
+            protected Response<JSONObject> parseNetworkResponse(com.android.volley.NetworkResponse response) {
+                statusCode = response.statusCode;
+                return super.parseNetworkResponse(response);
+            }
+
+            @Override
+            protected VolleyError parseNetworkError(VolleyError volleyError) {
+                statusCode = volleyError.networkResponse.statusCode;
+                errorListener.onErrorResponse(volleyError);
+                return super.parseNetworkError(volleyError);
+            }
+        };
+
+        queue.add(request);
+        try {
+            JSONObject response = future.get(responseTimeout, java.util.concurrent.TimeUnit.SECONDS);
+            return response;
+        } catch (Exception e) {
+            Log.e("Request", "Exception caught: " + e.toString());
+            return null;
+        }
     }
 }
