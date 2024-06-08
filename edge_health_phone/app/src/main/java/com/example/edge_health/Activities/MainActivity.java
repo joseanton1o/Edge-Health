@@ -12,9 +12,11 @@ import android.util.Log;
 import android.util.Pair;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.Toast;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
+import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.Volley;
 
@@ -90,6 +92,27 @@ public class MainActivity extends AppCompatActivity{
             startActivity(loginIntent);
         }
         else {
+
+            // volley request sync
+            VolleyRequest checkTokenReq = new VolleyRequest(this);
+            checkTokenReq.addHeader("Authorization", "Bearer " + token.getToken());
+
+
+            // User services will be always available so no need to check for conexion
+            checkTokenReq.sendRequestSync("/api/users/all", Request.Method.GET, new JSONObject(), error -> {
+                Log.d("Error", error.toString());
+                Log.d("Error", error.networkResponse.toString());
+                if (error.networkResponse.statusCode >= 400) {
+                    Log.d("Error", "Token is invalid");
+                    Intent loginIntent = new Intent(context, LoginActivity.class);
+                    finish();
+                    startActivity(loginIntent);
+                }
+            });
+
+
+
+
             db = Room.databaseBuilder(this, SensorDatabase.class, "sensor-final-database").build();
             sensorDao = db.sensorDao();
 
@@ -194,13 +217,6 @@ public class MainActivity extends AppCompatActivity{
 
             queue = Volley.newRequestQueue(this);
             VolleyRequest req = new VolleyRequest(this);
-
-
-            // TODO: New user database where to store the authentication jwt token and the user data
-            // If there's no user data, then the user should be redirected to the register Activity
-            // Where a form will be displayed to the user to fill in the data
-            // If the user data is already stored but the token is either expired or not present,
-            // then the user should be redirected to the login Activity
 
             // pointer to the current activity
             MainActivity currentActivity = this;
