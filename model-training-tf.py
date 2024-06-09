@@ -20,9 +20,16 @@ dataset = dataset[dataset.userStatus != 'none']
 X_vector = dataset.drop(columns=['userStatus', 'timestamp'])
 y_vector = dataset['userStatus']
 
+statuses_to_int = {'resting': 0, 'sleeping': 1, 'sport': 2, 'walking': 3}
+int_to_statuses = {0: 'resting', 1: 'sleeping', 2: 'sport', 3: 'walking'}
+
+# Convert the target variable to integers
+y_vector = y_vector.map(statuses_to_int)
+print(y_vector)
+
 # One-hot encode the target variable
 y_vector = pd.get_dummies(y_vector)
-
+print(y_vector)
 # Split the data into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(X_vector, y_vector, test_size=0.2, random_state=42)
 
@@ -31,14 +38,8 @@ scaler = StandardScaler()
 X_train = scaler.fit_transform(X_train)
 X_test = scaler.transform(X_test)
 
-statuses_to_int = {'resting': 0, 'sleeping': 1, 'sport': 2, 'walking': 3}
-int_to_statuses = {0: 'resting', 1: 'sleeping', 2: 'sport', 3: 'walking'}
-y_train_encoded = [statuses_to_int[label] for label in y_train]
-
 num_classes = len(statuses_to_int)
-y_train_encoded = tf.keras.utils.to_categorical(y_train_encoded, num_classes)
-print(y_train_encoded)
-print(y_train)
+
 # Build a TensorFlow model
 model = tf.keras.Sequential([
     tf.keras.layers.Dense(128, activation='relu', input_shape=(X_train.shape[1],)),
