@@ -92,7 +92,7 @@ public class MainActivity extends AppCompatActivity{
             startActivity(loginIntent);
         }
         else {
-
+            /*
             // volley request sync
             VolleyRequest checkTokenReq = new VolleyRequest(this);
             checkTokenReq.addHeader("Authorization", "Bearer " + token.getToken());
@@ -109,6 +109,7 @@ public class MainActivity extends AppCompatActivity{
                     startActivity(loginIntent);
                 }
             });
+             */
 
 
 
